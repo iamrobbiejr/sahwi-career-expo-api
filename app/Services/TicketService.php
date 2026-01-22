@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\EventRegistration;
+use App\Models\Payment;
+use App\Models\Ticket;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketMail;
+use Milon\Barcode\DNS1D;
+
+class TicketService
+{
+    public function generateTicketsForPayment(Payment $payment): void
+    {
+        foreach ($payment->items as $item) {
+            $this->generateTicket($item->registration, $payment);
+        }
+    }
+
+    public function generateTicket(EventRegistration $registration, Payment $payment = null): Ticket
+    {
+        $ticket = Ticket::create([
+            'event_registration_id' => $registration->id,
+            'payment_id' => $payment?->id,
+            'ticket_number' => $registration->ticket_number,
+            'status' => 'active',
+        ]);
+
+        // Generate barcode
+        $this->generateBarcode($ticket);
+
+        // Generate PDF
+        $this->generatePDF($ticket);
+
+        // Send email
+        $this->emailTicket($ticket);
+
+        return $ticket;
+    }
+
+    public function generateBarcode(Ticket $ticket): void
+    {
+        $barcode = new DNS1D();
+        $barcodeImage = $barcode->getBarcodePNG($ticket->ticket_number, 'C128', 3, 100);
+
+        // Save barcode as image
+        $path = "tickets/barcodes/{$ticket->ticket_number}.png";
+        Storage::put($path, base64_decode($barcodeImage));
+
+        $ticket->update([
+            'qr_code_path' => $path,
+        ]);
+    }
+
+    public function generatePDF(Ticket $ticket): void
+    {
+        $registration = $ticket->registration;
+        $event = $registration->event;
+
+        // Get a barcode image as base64
+        $barcodeBase64 = base64_encode(Storage::get($ticket->qr_code_path));
+
+        $data = [
+            'ticket' => $ticket,
+            'registration' => $registration,
+            'event' => $event,
+            'barcode' => $barcodeBase64,
+        ];
+
+        $pdf = Pdf::loadView('pdfs.ticket', $data)
+            ->setPaper('a4', 'portrait');
+
+        $path = "tickets/pdfs/{$ticket->ticket_number}.pdf";
+        Storage::put($path, $pdf->output());
+
+        $ticket->update([
+            'pdf_path' => $path,
+        ]);
+    }
+
+    public function emailTicket(Ticket $ticket): void
+    {
+        try {
+            $registration = $ticket->registration;
+
+            Mail::to($registration->attendee_email)
+                ->send(new TicketMail($ticket));
+
+            $ticket->update([
+                'emailed_at' => now(),
+                'email_attempts' => $ticket->email_attempts + 1,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to email ticket', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $ticket->increment('email_attempts');
+        }
+    }
+}
