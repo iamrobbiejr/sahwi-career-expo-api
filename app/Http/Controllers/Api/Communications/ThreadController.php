@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Communications;
 use App\Http\Controllers\Controller;
 use App\Models\Thread;
 use App\Models\ThreadMember;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +65,35 @@ class ThreadController extends Controller
                 'error' => 'Failed to fetch threads',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function searchUser(Request $request)
+    {
+        try {
+            $query = User::query();
+            // Filters
+            if ($search = $request->get('search')) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('email', 'LIKE', "%{$search}%")
+                        ->orWhere('display_name', 'LIKE', "%{$search}%");
+                });
+            }
+
+
+            $query->where('verified', '=', 1);
+
+            $users = $query->limit(8);
+            return response()->json([
+                'message' => 'Users retrieved successfully.',
+                'data' => $users->get(['id', 'name', 'email']),
+            ]);
+        } catch (Exception $e) {
+            Log::channel('admin')->error("Error fetching users: {$e->getMessage()}", [
+                'trace' => $e->getTraceAsString(),
+                'filters' => $request->all()
+            ]);
+            return response()->json(['message' => 'Failed to fetch users'], 500);
         }
     }
 

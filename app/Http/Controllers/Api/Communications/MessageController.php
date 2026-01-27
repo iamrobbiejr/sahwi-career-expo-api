@@ -120,7 +120,7 @@ class MessageController extends Controller
                 }
             }
 
-            // Create message
+            // Create a message
             $message = Message::create([
                 'thread_id' => $threadId,
                 'sender_id' => $userId,

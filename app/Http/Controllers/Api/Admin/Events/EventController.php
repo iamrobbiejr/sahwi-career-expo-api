@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventActivity;
 use App\Models\EventPanel;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class EventController extends Controller
 {
@@ -16,6 +19,7 @@ class EventController extends Controller
         $events = Event::with(['creator', 'panels', 'activities'])
             ->where('status', 'active')
             ->paginate(15);
+
         return response()->json([
             'message' => 'Events retrieved successfully.',
             'data' => $events->items(),
@@ -28,9 +32,118 @@ class EventController extends Controller
             ]
         ]);
     }
+
+    public function homeIndex()
+    {
+        try {
+            Log::channel('daily')->info('Home events requested');
+
+            $events = Event::with(['creator', 'panels', 'activities'])
+                ->where('status', 'active')
+                ->whereDate('start_date', '>=', now())
+                ->orderBy('start_date', 'asc')
+                ->limit(2)
+                ->get();
+
+            return response()->json([
+                'message' => 'Upcoming events retrieved successfully.',
+                'data' => $events,
+            ]);
+
+        } catch (Throwable $e) {
+            Log::channel('daily')->error('Failed to retrieve home events', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to retrieve upcoming events.',
+            ], 500);
+        }
+    }
+
+    public function adminIndex(Request $request)
+    {
+        try {
+            Log::channel('daily')->info('Admin events index requested', [
+                'query' => $request->all(),
+                'user_id' => auth()->id(),
+            ]);
+
+            $query = Event::with(['creator', 'panels', 'activities']);
+
+            /**
+             * 🔍 Search
+             * ?search=conference
+             */
+            if ($request->filled('search')) {
+                $search = $request->search;
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('venue', 'like', "%{$search}%")
+                        ->orWhere('location', 'like', "%{$search}%");
+                });
+            }
+
+            /**
+             * 🎯 Filters
+             */
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('is_paid')) {
+                $query->where('is_paid', filter_var($request->is_paid, FILTER_VALIDATE_BOOLEAN));
+            }
+
+            if ($request->filled('created_by')) {
+                $query->where('created_by', $request->created_by);
+            }
+
+            if ($request->filled('start_date')) {
+                $query->whereDate('start_date', '>=', $request->start_date);
+            }
+
+            if ($request->filled('end_date')) {
+                $query->whereDate('end_date', '<=', $request->end_date);
+            }
+
+            /**
+             * 📊 Sorting + Pagination
+             */
+            $events = $query
+                ->orderByDesc('created_at')
+                ->paginate($request->get('per_page', 15));
+
+            return response()->json([
+                'message' => 'Events retrieved successfully.',
+                'data' => $events->items(),
+                'pagination' => [
+                    'total' => $events->total(),
+                    'count' => $events->count(),
+                    'per_page' => $events->perPage(),
+                    'current_page' => $events->currentPage(),
+                    'total_pages' => $events->lastPage(),
+                ],
+            ]);
+
+        } catch (Throwable $e) {
+            Log::channel('daily')->error('Failed to retrieve events', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to retrieve events.',
+            ], 500);
+        }
+    }
     public function show(string $eventId)
     {
-        $event = Event::with(['creator', 'panels.user', 'activities'])->findOrFail($eventId);
+        $event = Event::with(['creator', 'panels', 'activities'])->findOrFail($eventId);
         return response()->json([
             'message' => 'Event retrieved.',
             'data' => $event
@@ -49,10 +162,12 @@ class EventController extends Controller
             'is_paid' => 'boolean',
             'price_cents' => 'nullable|integer|min:0',
             'currency' => 'nullable|string|max:3',
-            'img' => 'nullable|url',
-            'status' => 'in:draft,active,cancelled,completed'
+            'banner' => 'nullable|url',
+            'status' => 'in:draft,active,cancelled,completed',
+            'registration_deadline' => 'nullable|date|before:start_date'
         ]);
         $validated['created_by'] = auth()->id();
+        $validated['img'] = $validated['banner'];
         $event = Event::create($validated);
         return response()->json([
             'message' => 'Event created successfully.',
@@ -73,9 +188,11 @@ class EventController extends Controller
             'is_paid' => 'boolean',
             'price_cents' => 'nullable|integer|min:0',
             'currency' => 'nullable|string|max:3',
-            'img' => 'nullable|url',
-            'status' => 'in:draft,active,cancelled,completed'
+            'banner' => 'nullable|url',
+            'status' => 'in:draft,active,cancelled,completed',
+            'registration_deadline' => 'nullable|date|before:start_date'
         ]);
+        $validated['img'] = $validated['banner'];
         $event->update($validated);
         return response()->json([
             'message' => 'Event updated successfully.',
@@ -90,7 +207,7 @@ class EventController extends Controller
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function bulkStore(Request $request)
     {
@@ -106,7 +223,7 @@ class EventController extends Controller
             'is_paid' => 'boolean',
             'price_cents' => 'nullable|integer|min:0',
             'currency' => 'nullable|string|max:3',
-            'img' => 'nullable|url',
+            'banner' => 'nullable|url',
             'status' => 'in:draft,active,cancelled,completed',
             // Panels
             'panels' => 'array',
@@ -127,6 +244,7 @@ class EventController extends Controller
             // Create Event
             $eventData = collect($validated)->except(['panels', 'activities'])->toArray();
             $eventData['created_by'] = auth()->id();
+            $eventData['img'] = $eventData['banner'];
             $event = Event::create($eventData);
             // Create Panels
             if (!empty($validated['panels'])) {
@@ -145,7 +263,7 @@ class EventController extends Controller
                 'message' => 'Event created successfully with panels and activities.',
                 'data' => $event->load(['panels', 'activities'])
             ], 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
                 'message' => 'Failed to create event.',

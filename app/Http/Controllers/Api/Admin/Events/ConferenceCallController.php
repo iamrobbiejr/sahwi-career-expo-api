@@ -18,29 +18,32 @@ class ConferenceCallController extends Controller
         $query = ConferenceCall::with('event');
 
         // Filter by status
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
         // Filter by platform
-        if ($request->has('platform')) {
+        if ($request->filled('platform')) {
             $query->where('platform', $request->platform);
         }
 
         // Filter by event
-        if ($request->has('event_id')) {
+        if ($request->filled('event_id')) {
             $query->where('event_id', $request->event_id);
         }
 
         // Filter upcoming meetings
-        if ($request->has('upcoming') && $request->upcoming) {
-            $query->upcoming();
+        if ($request->boolean('upcoming')) {
+            $query->where('scheduled_start', '>=', now());
         }
 
-        $conferenceCalls = $query->orderBy('scheduled_start', 'desc')->paginate(15);
+        $conferenceCalls = $query
+            ->orderBy('scheduled_start', 'desc')
+            ->paginate(15);
 
         return response()->json($conferenceCalls);
     }
+
 
     /**
      * Store a newly created conference call.
@@ -68,7 +71,7 @@ class ConferenceCallController extends Controller
 
         // Verify event is virtual
         $event = Event::findOrFail($request->event_id);
-        if ($event->location !== 'Virtual') {
+        if ($event->location != null && $event->venue != 'virtual') {
             return response()->json([
                 'error' => 'Conference calls can only be created for virtual events'
             ], 400);

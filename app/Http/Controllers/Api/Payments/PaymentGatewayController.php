@@ -21,6 +21,12 @@ class PaymentGatewayController extends Controller
                     'slug' => $gateway->slug,
                     'supports_webhooks' => $gateway->supports_webhooks,
                     'supported_currencies' => $gateway->supported_currencies,
+                    'is_active' => $gateway->is_active,
+                    'display_order' => $gateway->display_order,
+                    'settings' => $gateway->settings,
+                    'credentials' => $gateway->credentials,
+                    'webhook_url' => $gateway->webhook_url,
+                    'webhook_secret' => $gateway->webhook_secret,
                 ];
             });
 

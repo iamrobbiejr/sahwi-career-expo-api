@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -86,7 +87,7 @@ class ProcessEmailBroadcastJob implements ShouldQueue
      * Get recipients based on an audience type.
      * @throws Exception
      */
-    protected function getRecipients()
+    protected function getRecipients(): \Illuminate\Database\Eloquent\Collection|Collection
     {
         $query = User::query();
 

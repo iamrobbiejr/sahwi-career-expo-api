@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\University;
+use Exception;
 use Illuminate\Http\Request;
+use Log;
 
 class UniversityController extends Controller
 {
@@ -12,7 +14,13 @@ class UniversityController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $universities = University::all();
+            return response()->json($universities);
+        } catch (Exception $e) {
+            Log::error('Error fetching universities: ' . $e->getMessage());
+            return response()->json(['message' => 'Error fetching universities'], 500);
+        }
     }
 
     /**

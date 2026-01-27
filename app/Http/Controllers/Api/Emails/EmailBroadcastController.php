@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use ReflectionClass;
 
 class EmailBroadcastController extends Controller
 {
@@ -429,8 +430,8 @@ class EmailBroadcastController extends Controller
             $tempBroadcast = new EmailBroadcast($request->all());
             $job = new ProcessEmailBroadcastJob($tempBroadcast);
 
-            // Use reflection to call protected method
-            $reflection = new \ReflectionClass($job);
+            // Use reflection to call a protected method
+            $reflection = new ReflectionClass($job);
             $method = $reflection->getMethod('getRecipients');
             $recipients = $method->invoke($job);
 

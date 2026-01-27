@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -38,7 +39,7 @@ class UserManagementController extends Controller
                     'total_pages' => $users->lastPage(),
                 ],
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Error fetching users: {$e->getMessage()}", [
                 'trace' => $e->getTraceAsString(),
                 'filters' => $request->all()
@@ -49,12 +50,12 @@ class UserManagementController extends Controller
     public function show(string $userId)
     {
         try {
-            $user = User::withTrashed()->findOrFail($userId);
+            $user = User::findOrFail($userId);
             return response()->json([
                 'message' => 'User details retrieved.',
                 'data' => $user
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Error fetching user ID {$userId}: {$e->getMessage()}");
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -70,7 +71,7 @@ class UserManagementController extends Controller
                 'message' => 'User role updated successfully.',
                 'user' => $user->fresh()
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Error updating user role ID {$userId}: {$e->getMessage()}");
             return response()->json(['message' => 'Failed to update user role'], 500);
         }
@@ -86,7 +87,7 @@ class UserManagementController extends Controller
                 $user->delete();
                 return response()->json(['message' => 'User suspended.']);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Error toggling suspension for user ID {$userId}: {$e->getMessage()}");
             return response()->json(['message' => 'Failed to update user suspension status'], 500);
         }
@@ -97,7 +98,7 @@ class UserManagementController extends Controller
             $user = User::findOrFail($userId);
             $user->forceDelete();
             return response()->json(['message' => 'User permanently deleted.']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Error deleting user ID {$userId}: {$e->getMessage()}");
             return response()->json(['message' => 'Failed to delete user'], 500);
         }

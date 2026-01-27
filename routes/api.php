@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\VerificationController;
 use App\Http\Controllers\Api\Articles\ArticleCommentController;
 use App\Http\Controllers\Api\Articles\ArticleController;
 use App\Http\Controllers\Api\Auth;
+use App\Http\Controllers\Api\Communications\AttachmentController;
 use App\Http\Controllers\Api\Communications\MessageController;
 use App\Http\Controllers\Api\Communications\ThreadController;
 use App\Http\Controllers\Api\Emails\EmailBroadcastController;
@@ -19,12 +20,14 @@ use App\Http\Controllers\Api\Forums\ForumCommentController;
 use App\Http\Controllers\Api\Forums\ForumController;
 use App\Http\Controllers\Api\Forums\ForumPostController;
 use App\Http\Controllers\Api\Meta\ApiMetaController;
+use App\Http\Controllers\Api\Organizations\OrganizationController;
 use App\Http\Controllers\Api\Payments\PaymentController;
 use App\Http\Controllers\Api\Payments\PaymentGatewayController;
 use App\Http\Controllers\Api\Payments\TicketController;
 use App\Http\Controllers\Api\Payments\WebhookController;
 use App\Http\Controllers\DonationCampaignController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\UniversityController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -39,11 +42,31 @@ Route::prefix('v1')
     */
     Route::get('/meta', ApiMetaController::class);
 
+
+        /*
+       |--------------------------------------------------------------------------
+       | Universities
+       |--------------------------------------------------------------------------
+       */
+
+        Route::get('/universities', [UniversityController::class, 'index']);
+
     /*
     |--------------------------------------------------------------------------
-    | Auth Routes
+    | Organizations
     |--------------------------------------------------------------------------
     */
+        Route::prefix('organizations')->group(function () {
+            Route::get('/search', [OrganizationController::class, 'search']);
+            Route::get('/', [OrganizationController::class, 'index']);
+            Route::get('/{organization}', [OrganizationController::class, 'show']);
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Auth Routes
+        |--------------------------------------------------------------------------
+        */
     Route::prefix('auth')->group(function () {
         Route::post('/register', Auth\RegisterController::class)
             ->middleware('throttle:auth');
@@ -109,11 +132,13 @@ Route::prefix('v1')
         // Public or Authenticated Event Routes
         Route::prefix('events')->group(function () {
             Route::get('/', [EventController::class, 'index']); // List events
+            Route::get('/upcoming', [EventController::class, 'homeIndex']);
             Route::get('/{eventId}', [EventController::class, 'show']); // Show a single event
         });
         // Protected Admin / Creator Routes
         Route::middleware(['auth:sanctum', 'can:events.create'])->group(function () {
             Route::apiResource('events', EventController::class)->except(['index', 'show']);
+            Route::get('/admin/events', [EventController::class, 'adminIndex']); // List events
             Route::post('/events/bulk', [EventController::class, 'bulkStore']); // Create multiple panels/activities together
         });
         // Event Panels
@@ -270,6 +295,8 @@ Route::prefix('v1')
                 Route::delete('/{id}/members', [ThreadController::class, 'removeMember']);
                 Route::post('/{id}/leave', [ThreadController::class, 'leave']);
                 Route::post('/{id}/mute', [ThreadController::class, 'toggleMute']);
+
+                Route::get('/search/user', [ThreadController::class, 'searchUser']);
             });
 
             // Messages within Threads
@@ -285,6 +312,9 @@ Route::prefix('v1')
                 Route::delete('/{messageId}/reactions', [MessageController::class, 'removeReaction']);
                 Route::get('/search', [MessageController::class, 'search']);
             });
+
+            // Message Attachments
+            Route::get('message-attachments/{messageId}/{index}', [AttachmentController::class, 'download']);
 
             // ============================================
             // FORUMS ROUTES
@@ -346,7 +376,10 @@ Route::prefix('v1')
         // Public routes (no authentication required)
         Route::prefix('articles')->group(function () {
             Route::get('/', [ArticleController::class, 'index']);
+            Route::get('/trending', [ArticleController::class, 'trending']);
+            Route::get('/trending-topics', [ArticleController::class, 'trendingTopics']);
             Route::get('/{article}', [ArticleController::class, 'show']);
+            Route::post('/{article}/share', [ArticleController::class, 'share']);
 
             // Article comments - public reading
             Route::get('/{article}/comments', [ArticleCommentController::class, 'index']);
@@ -364,6 +397,8 @@ Route::prefix('v1')
                 Route::put('/{article}', [ArticleController::class, 'update']);
                 Route::delete('/{article}', [ArticleController::class, 'destroy']);
                 Route::patch('/{article}/toggle-publish', [ArticleController::class, 'togglePublish']);
+                Route::post('/{article}/bookmark', [ArticleController::class, 'toggleBookmark']);
+                Route::post('/{article}/like', [ArticleController::class, 'toggleLike']);
 
                 // Comment management
                 Route::post('/{article}/comments', [ArticleCommentController::class, 'store']);

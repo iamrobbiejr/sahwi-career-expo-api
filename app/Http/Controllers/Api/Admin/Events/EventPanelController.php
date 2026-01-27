@@ -11,7 +11,7 @@ class EventPanelController extends Controller
     public function index(string $eventId)
     {
         $panels = EventPanel::where('event_id', $eventId)
-            ->with('user')
+//            ->with('user')
             ->orderBy('display_order')
             ->get();
         return response()->json([

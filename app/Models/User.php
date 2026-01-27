@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -78,13 +79,13 @@ class User extends Authenticatable implements MustVerifyEmail
      */
 
     // User belongs to a university they are interested in
-    public function interestedUniversity()
+    public function interestedUniversity(): BelongsTo
     {
         return $this->belongsTo(University::class, 'interested_university_id');
     }
 
     // User belongs to an organization (company/university/etc.)
-    public function organisation()
+    public function organisation(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'organisation_id');
     }
@@ -182,4 +183,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Forum::class, 'created_by');
     }
+
+    public function eventRegistrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
+
 }

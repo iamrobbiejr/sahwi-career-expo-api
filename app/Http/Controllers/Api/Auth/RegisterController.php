@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
+use Exception;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -42,6 +44,8 @@ class RegisterController extends Controller
                 'role_at_organization' => 'nullable|string|max:100',
                 'organization_name' => 'nullable|string|max:255',
                 'verification_docs' => 'nullable|array',
+                // Avatar upload (optional)
+                'avatar' => 'nullable|image|max:5120', // max 5MB
             ]);
             // Role-specific validation & processing
             switch ($validated['role']) {
@@ -70,12 +74,18 @@ class RegisterController extends Controller
                     );
                     break;
                 default:
-                    throw new \Exception('Unexpected value');
+                    throw new Exception('Unexpected value');
+            }
+            // Handle avatar upload (optional)
+            if ($request->hasFile('avatar')) {
+                $path = $request->file('avatar')->store('avatars', 'public');
+                // Generate absolute URL for stored file
+                $validated['avatar_url'] = Storage::disk('public')->url($path);
             }
             // Create user
             $validated['password'] = Hash::make($validated['password']);
             $user = User::create(array_filter($validated)); // Remove nulls safely
-            // Assign role
+            // Assign a role
             $user->assignRole($validated['role']);
             // Link user to organization if applicable
             if (isset($validated['organisation_id'])) {
@@ -91,7 +101,7 @@ class RegisterController extends Controller
                 'message' => 'Registration successful. Please check your email to verify your account.',
                 'user' => $user
             ], 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('auth')->error("Registration failed: {$e->getMessage()}", [
                 'input' => $request->all(),
                 'exception' => $e->getTraceAsString()

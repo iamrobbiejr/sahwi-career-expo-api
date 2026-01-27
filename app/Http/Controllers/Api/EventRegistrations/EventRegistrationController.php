@@ -20,14 +20,15 @@ class EventRegistrationController extends Controller
     {
         $registrations = $event->registrations()
             ->with(['user:id,name,email', 'registeredBy:id,name,email', 'organization'])
-            ->when($request->has('status'), function ($query) use ($request) {
+            ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($request->integer('per_page', 20));
 
         return response()->json($registrations);
     }
+
 
     public function analytics(Event $event): JsonResponse
     {
@@ -54,7 +55,7 @@ class EventRegistrationController extends Controller
 
     public function registerIndividual(Request $request, Event $event): JsonResponse
     {
-        // Check if event is accepting registrations
+        // Check if the event is accepting registrations
         if ($event->status !== 'active') {
             return response()->json([
                 'message' => 'Event is not accepting registrations',
@@ -200,14 +201,16 @@ class EventRegistrationController extends Controller
     {
         $registrations = EventRegistration::where('user_id', $request->user()->id)
             ->with(['event', 'ticket', 'paymentItem.payment'])
-            ->when($request->has('status'), function ($query) use ($request) {
-                $query->where('status', $request->status);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->when(
+                $request->filled('status'),
+                fn($query) => $query->where('status', trim($request->status))
+            )
+            ->orderByDesc('created_at')
+            ->paginate($request->integer('per_page', 20));
 
         return response()->json($registrations);
     }
+
 
     public function show(EventRegistration $registration): JsonResponse
     {
