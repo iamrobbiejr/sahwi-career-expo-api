@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\GroupRegistration;
+use App\Models\Payment;
+use App\Models\PaymentItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +21,7 @@ class RegistrationService
                 'user_id' => $user->id,
                 'registration_type' => 'individual',
                 'attendee_type' => $user->role,
-                'status' => 'pending',
+                'status' => $event->is_paid ? 'pending' : 'confirmed',
                 'attendee_name' => $data['attendee_name'] ?? $user->name,
                 'attendee_email' => $data['attendee_email'] ?? $user->email,
                 'attendee_phone' => $data['attendee_phone'] ?? $user->whatsapp_number,
@@ -31,6 +33,31 @@ class RegistrationService
 
             // Increment event registrations count
             $event->increment('registrations');
+
+            // For free events: create zero-amount completed payment and generate ticket
+            if (!$event->is_paid) {
+                $payment = Payment::create([
+                    'event_id' => $event->id,
+                    'user_id' => $user->id,
+                    'gateway_name' => 'Free',
+                    'amount_cents' => 0,
+                    'currency' => $event->currency,
+                    'status' => 'completed',
+                    'paid_at' => now(),
+                    'notes' => 'Auto-generated for free event registration',
+                ]);
+
+                PaymentItem::create([
+                    'payment_id' => $payment->id,
+                    'event_registration_id' => $registration->id,
+                    'description' => "Registration for {$event->name} - {$registration->attendee_name}",
+                    'amount_cents' => 0,
+                    'quantity' => 1,
+                ]);
+
+                // Generate and email ticket
+                app(TicketService::class)->generateTicket($registration, $payment);
+            }
 
             return $registration;
         });
@@ -48,16 +75,31 @@ class RegistrationService
                 'total_members' => count($members),
             ]);
 
+            // For free events, prepare a zero-amount completed payment for the whole group
+            $payment = null;
+            if (!$event->is_paid) {
+                $payment = Payment::create([
+                    'event_id' => $event->id,
+                    'user_id' => $companyRep->id,
+                    'gateway_name' => 'Free',
+                    'amount_cents' => 0,
+                    'currency' => $event->currency,
+                    'status' => 'completed',
+                    'paid_at' => now(),
+                    'notes' => 'Auto-generated for free group registration',
+                ]);
+            }
+
             // Create individual registrations for each member
             foreach ($members as $memberData) {
-                EventRegistration::create([
+                $registration = EventRegistration::create([
                     'event_id' => $event->id,
                     'user_id' => $companyRep->id, // The person who registered
                     'registered_by' => $companyRep->id,
                     'group_registration_id' => $groupRegistration->id,
                     'registration_type' => 'group',
                     'attendee_type' => 'company_rep',
-                    'status' => 'pending',
+                    'status' => $event->is_paid ? 'pending' : 'confirmed',
                     'attendee_name' => $memberData['name'],
                     'attendee_email' => $memberData['email'],
                     'attendee_phone' => $memberData['phone'] ?? null,
@@ -65,6 +107,19 @@ class RegistrationService
                     'attendee_organization_id' => $companyRep->organisation_id,
                     'special_requirements' => $memberData['special_requirements'] ?? null,
                 ]);
+
+                // For free events, attach a zero-amount item per member and generate ticket
+                if ($payment) {
+                    PaymentItem::create([
+                        'payment_id' => $payment->id,
+                        'event_registration_id' => $registration->id,
+                        'description' => "Group registration for {$event->name} - {$registration->attendee_name}",
+                        'amount_cents' => 0,
+                        'quantity' => 1,
+                    ]);
+
+                    app(TicketService::class)->generateTicket($registration, $payment);
+                }
             }
 
             // Update event registrations count

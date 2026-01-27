@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
+use App\Mail\TicketMail;
 use App\Models\EventRegistration;
 use App\Models\Payment;
 use App\Models\Ticket;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
+use Exception;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\TicketMail;
+use Illuminate\Support\Facades\Storage;
+use Log;
 use Milon\Barcode\DNS1D;
 
 class TicketService
@@ -48,7 +50,10 @@ class TicketService
 
         // Save barcode as image
         $path = "tickets/barcodes/{$ticket->ticket_number}.png";
-        Storage::put($path, base64_decode($barcodeImage));
+        Storage::disk('public')->put(
+            $path,
+            base64_decode($barcodeImage)
+        );
 
         $ticket->update([
             'qr_code_path' => $path,
@@ -61,7 +66,7 @@ class TicketService
         $event = $registration->event;
 
         // Get a barcode image as base64
-        $barcodeBase64 = base64_encode(Storage::get($ticket->qr_code_path));
+        $barcodeBase64 = base64_encode(Storage::disk('public')->get($ticket->qr_code_path));
 
         $data = [
             'ticket' => $ticket,
@@ -74,7 +79,7 @@ class TicketService
             ->setPaper('a4', 'portrait');
 
         $path = "tickets/pdfs/{$ticket->ticket_number}.pdf";
-        Storage::put($path, $pdf->output());
+        Storage::disk('public')->put($path, $pdf->output());
 
         $ticket->update([
             'pdf_path' => $path,
@@ -94,8 +99,8 @@ class TicketService
                 'email_attempts' => $ticket->email_attempts + 1,
             ]);
 
-        } catch (\Exception $e) {
-            \Log::error('Failed to email ticket', [
+        } catch (Exception $e) {
+            Log::error('Failed to email ticket', [
                 'ticket_id' => $ticket->id,
                 'error' => $e->getMessage(),
             ]);

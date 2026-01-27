@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\EventRegistrations;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
@@ -112,7 +113,10 @@ class EventRegistrationController extends Controller
 
     public function registerGroup(Request $request, Event $event): JsonResponse
     {
-        if ($request->user()->role !== 'company_rep') {
+        // Allow if user has the Spatie role or matches enum/string value
+        $userRole = $request->user()->role;
+        $roleValue = $userRole instanceof UserRole ? $userRole->value : $userRole;
+        if (!$request->user()->hasRole('company_rep') && $roleValue !== 'company_rep') {
             return response()->json([
                 'message' => 'Only company representatives can register groups',
             ], 403);
