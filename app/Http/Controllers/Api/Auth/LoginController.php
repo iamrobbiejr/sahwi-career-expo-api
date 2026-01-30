@@ -94,6 +94,13 @@ class LoginController extends Controller
                 'ip' => $request->ip(),
             ]);
 
+            // Reward: daily login (once per day)
+            try {
+                app(\App\Services\RewardService::class)->awardFor($user, 'daily_login');
+            } catch (\Throwable $e) {
+                // Non-critical
+            }
+
             return response()->json([
                 'message' => 'Logged in successfully.',
                 'token' => $token,

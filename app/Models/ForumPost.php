@@ -159,6 +159,33 @@ class ForumPost extends Model
      */
     public function incrementViews(): void
     {
+        // Increment view count
         $this->increment('view_count');
+
+        // Reward author on hitting view milestones
+        try {
+            $this->refresh();
+            $milestones = config('rewards.view_milestones', []);
+            if (is_array($milestones) && in_array((int)$this->view_count, $milestones, true)) {
+                $author = $this->author;
+                if ($author) {
+                    // Avoid duplicate awards for the same milestone
+                    $exists = \App\Models\UserReward::where('user_id', $author->id)
+                        ->where('action', 'forum_post_viewed')
+                        ->where('meta->post_id', $this->id)
+                        ->where('meta->milestone', (int)$this->view_count)
+                        ->exists();
+
+                    if (!$exists) {
+                        app(\App\Services\RewardService::class)->awardFor($author, 'forum_post_viewed', [
+                            'post_id' => $this->id,
+                            'milestone' => (int)$this->view_count,
+                        ]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Never fail due to rewards
+        }
     }
 }

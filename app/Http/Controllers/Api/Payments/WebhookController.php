@@ -31,6 +31,11 @@ class WebhookController extends Controller
         return $this->handleWebhook('stripe', $request->all());
     }
 
+    public function smilepay(Request $request)
+    {
+        return $this->handleWebhook('smilepay', $request->all());
+    }
+
     protected function handleWebhook(string $gatewaySlug, array $payload)
     {
         // Log webhook

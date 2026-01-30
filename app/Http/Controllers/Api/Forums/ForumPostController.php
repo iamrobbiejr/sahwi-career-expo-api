@@ -173,6 +173,16 @@ class ForumPostController extends Controller
 
             DB::commit();
 
+            // Reward: configured points for creating a forum post
+            try {
+                app(\App\Services\RewardService::class)->awardFor(Auth::user(), 'forum_post_create', [
+                    'forum_id' => $forumId,
+                    'post_id' => $post->id,
+                ]);
+            } catch (\Throwable $e) {
+                // Do not fail request due to rewards
+            }
+
             return response()->json([
                 'message' => 'Post created successfully',
                 'data' => $post->load(['author', 'forum']),

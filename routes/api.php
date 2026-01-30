@@ -19,6 +19,8 @@ use App\Http\Controllers\Api\Files\FileUploadController;
 use App\Http\Controllers\Api\Forums\ForumCommentController;
 use App\Http\Controllers\Api\Forums\ForumController;
 use App\Http\Controllers\Api\Forums\ForumPostController;
+use App\Http\Controllers\Api\Me\RewardsHistoryController;
+use App\Http\Controllers\Api\Me\StatsController;
 use App\Http\Controllers\Api\Meta\ApiMetaController;
 use App\Http\Controllers\Api\Organizations\OrganizationController;
 use App\Http\Controllers\Api\Payments\PaymentController;
@@ -96,9 +98,19 @@ Route::prefix('v1')
 
     /*
     |--------------------------------------------------------------------------
-    | File Uploads
+    | Authenticated User Stats
     |--------------------------------------------------------------------------
     */
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('/me/stats', StatsController::class);
+            Route::get('/me/rewards/history', RewardsHistoryController::class);
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | File Uploads
+        |--------------------------------------------------------------------------
+        */
     Route::prefix('files')->group(function () {
         Route::post(
             '/upload/verification-docs',
@@ -217,6 +229,7 @@ Route::prefix('v1')
         Route::post('webhooks/paynow', [WebhookController::class, 'paynow']);
         Route::post('webhooks/paypal', [WebhookController::class, 'paypal']);
         Route::post('webhooks/stripe', [WebhookController::class, 'stripe']);
+        Route::post('webhooks/smilepay', [WebhookController::class, 'smilepay'])->name('webhooks.smilepay');
 
         Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('events/{event}/registrations', [EventRegistrationController::class, 'registrations']);

@@ -24,8 +24,8 @@ class PaymentController extends Controller
             'registration_ids' => 'required|array|min:1',
             'registration_ids.*' => 'exists:event_registrations,id',
             'payment_gateway' => 'required|string|exists:payment_gateways,slug',
-            'payment_method' => 'nullable|string|in:card,mobile_money,bank_transfer',
-            'payment_phone' => 'required_if:payment_method,mobile_money|string',
+            'payment_method' => 'nullable|string|in:card,ecocash,innbucks,omari,mobile_money,bank_transfer',
+            'payment_phone' => 'exclude_unless:payment_method,mobile_money|required|string',
             'return_url' => 'nullable|url',
             'cancel_url' => 'nullable|url',
         ]);

@@ -6,9 +6,11 @@ use App\Models\Payment;
 use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Services\PaymentGateways\Contracts\PaymentGatewayInterface;
 use Exception;
-use Stripe\StripeClient;
 use Illuminate\Support\Facades\Log;
+use Stripe\Exception\ApiErrorException;
+use Stripe\StripeClient;
 use Stripe\Webhook;
+
 
 class StripeGateway implements PaymentGatewayInterface
 {
@@ -18,11 +20,16 @@ class StripeGateway implements PaymentGatewayInterface
     public function __construct()
     {
         $this->gateway = PaymentGatewayModel::where('slug', 'stripe')->firstOrFail();
-        $credentials = $this->gateway->credentials;
+//        $credentials = $this->gateway->credentials;
 
-        $this->stripe = new StripeClient($credentials['secret_key']);
+        $this->stripe = new StripeClient(
+            config('services.stripe.secret')
+        );
     }
 
+    /**
+     * @throws ApiErrorException
+     */
     public function initializePayment(Payment $payment, array $options = []): array
     {
         try {

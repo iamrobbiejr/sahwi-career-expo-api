@@ -59,6 +59,12 @@ class RegistrationService
                 app(TicketService::class)->generateTicket($registration, $payment);
             }
 
+            // Reward: configured points for event registration
+            app(\App\Services\RewardService::class)->awardFor($user, 'event_registration', [
+                'event_id' => $event->id,
+                'registration_id' => $registration->id,
+            ]);
+
             return $registration;
         });
     }
@@ -124,6 +130,12 @@ class RegistrationService
 
             // Update event registrations count
             $event->increment('registrations', count($members));
+
+            // Reward: configured points for organizing a group registration (same key)
+            app(\App\Services\RewardService::class)->awardFor($companyRep, 'event_registration', [
+                'event_id' => $event->id,
+                'group_registration_id' => $groupRegistration->id,
+            ]);
 
             return $groupRegistration;
         });

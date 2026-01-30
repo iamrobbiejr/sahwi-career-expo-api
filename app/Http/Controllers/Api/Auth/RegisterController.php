@@ -82,6 +82,9 @@ class RegisterController extends Controller
                 // Generate absolute URL for stored file
                 $validated['avatar_url'] = Storage::disk('public')->url($path);
             }
+            if ($validated['role'] = 'student') {
+                $validated['verified'] = 1;
+            }
             // Create user
             $validated['password'] = Hash::make($validated['password']);
             $user = User::create(array_filter($validated)); // Remove nulls safely

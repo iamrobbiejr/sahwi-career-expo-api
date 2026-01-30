@@ -171,6 +171,19 @@ class ForumCommentController extends Controller
 
             DB::commit();
 
+            // Reward: configured points for creating a published forum comment
+            if ($status === 'published') {
+                try {
+                    app(\App\Services\RewardService::class)->awardFor(Auth::user(), 'forum_comment_create', [
+                        'forum_id' => $forumId,
+                        'post_id' => $postId,
+                        'comment_id' => $comment->id,
+                    ]);
+                } catch (\Throwable $e) {
+                    // Do not fail request due to rewards
+                }
+            }
+
             return response()->json([
                 'message' => 'Comment added successfully',
                 'data' => $comment->load(['author', 'parent']),
@@ -403,6 +416,20 @@ class ForumCommentController extends Controller
             // In production, you'd want a separate 'comment_likes' table
 
             $comment->increment('like_count');
+
+            // Reward the comment author for receiving a like (avoid self-like awards)
+            try {
+                $author = $comment->author; // lazy load relation
+                if ($author && $author->id !== $userId) {
+                    app(\App\Services\RewardService::class)->awardFor($author, 'forum_post_liked', [
+                        'comment_id' => $comment->id,
+                        'post_id' => $postId,
+                        'liked_by' => $userId,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // Non-critical
+            }
 
             return response()->json([
                 'message' => 'Comment liked',

@@ -34,5 +34,17 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
+    'smilepay' => [
+        // Base URL for Smile&Pay (ZB Pay) payments gateway
+        'base_url' => env('SMILEPAY_BASE_URL', 'https://zbnet.zb.co.zw/wallet_sandbox_api/payments-gateway'),
+        'api_key' => env('SMILEPAY_API_KEY'),
+        'api_secret' => env('SMILEPAY_API_SECRET'),
+    ],
 
 ];

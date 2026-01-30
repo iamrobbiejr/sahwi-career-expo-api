@@ -44,6 +44,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'interested_area',
         'interested_course',
         'avatar_url',
+        'reputation_points',
+        'streak_days',
+        'streak_last_date',
     ];
 
     /**
@@ -71,6 +74,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'dob' => 'date',
         'verification_submitted_at' => 'datetime',
         'verification_reviewed_at' => 'datetime',
+            'streak_last_date' => 'date',
+            'reputation_points' => 'integer',
+            'streak_days' => 'integer',
         ];
     }
 
