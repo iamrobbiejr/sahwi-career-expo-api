@@ -54,7 +54,7 @@ class TicketService
         );
 
         $ticket->update([
-            'qr_code_path' => $path,
+            'qr_code_path' => 'app/public/' . $path,
         ]);
     }
 
@@ -80,7 +80,7 @@ class TicketService
         Storage::disk('public')->put($path, $pdf->output());
 
         $ticket->update([
-            'pdf_path' => $path,
+            'pdf_path' => 'app/public' . $path,
         ]);
     }
 

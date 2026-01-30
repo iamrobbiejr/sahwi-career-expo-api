@@ -18,11 +18,13 @@ class TicketController extends Controller
     public function show(Ticket $ticket): JsonResponse
     {
         $registration = $ticket->registration;
+        $currentUserId = (int)auth()->id();
 
-        // Authorization
-        if ($registration->user_id !== auth()->id() &&
-            $registration->registered_by !== auth()->id() &&
+        // Cast database values to int for strict comparison
+        if ((int)$registration->user_id !== $currentUserId &&
+            (int)$registration->registered_by !== $currentUserId &&
             !auth()->user()->hasRole('admin')) {
+
             return response()->json([
                 'message' => 'Unauthorized',
             ], 403);

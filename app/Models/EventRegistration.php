@@ -70,7 +70,7 @@ class EventRegistration extends Model
 
     public function ticket(): HasOne
     {
-        return $this->hasOne(Ticket::class);
+        return $this->hasOne(Ticket::class, 'event_registration_id', 'id');
     }
 
     public function isPaid(): bool

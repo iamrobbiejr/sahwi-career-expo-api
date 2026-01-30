@@ -27,7 +27,7 @@ class Ticket extends Model
 
     public function registration(): BelongsTo
     {
-        return $this->belongsTo(EventRegistration::class, 'event_registration_id');
+        return $this->belongsTo(EventRegistration::class, 'event_registration_id', 'id');
     }
 
     public function payment(): BelongsTo
