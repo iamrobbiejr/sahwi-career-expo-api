@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RewardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class LoginController extends Controller
 {
@@ -51,13 +53,13 @@ class LoginController extends Controller
 
             // Verification denied
             if (
-                in_array($user->role, $restrictedRoles) &&
+                in_array($user->role->value, $restrictedRoles) &&
                 !$user->verified &&
                 !is_null($user->verification_reviewed_at)
             ) {
                 Log::channel('auth')->notice('Login blocked: verification denied', [
                     'user_id' => $user->id,
-                    'role' => $user->role,
+                    'role' => $user->role->value,
                 ]);
 
                 Auth::logout();
@@ -69,13 +71,13 @@ class LoginController extends Controller
 
             // Pending verification
             if (
-                in_array($user->role, $restrictedRoles) &&
+                in_array($user->role->value, $restrictedRoles) &&
                 !$user->verified &&
                 is_null($user->verification_reviewed_at)
             ) {
                 Log::channel('auth')->info('Login blocked: verification pending', [
                     'user_id' => $user->id,
-                    'role' => $user->role,
+                    'role' => $user->role->value,
                 ]);
 
                 Auth::logout();
@@ -96,8 +98,8 @@ class LoginController extends Controller
 
             // Reward: daily login (once per day)
             try {
-                app(\App\Services\RewardService::class)->awardFor($user, 'daily_login');
-            } catch (\Throwable $e) {
+                app(RewardService::class)->awardFor($user, 'daily_login');
+            } catch (Throwable $e) {
                 // Non-critical
             }
 
@@ -108,7 +110,7 @@ class LoginController extends Controller
                 'permissions' => $user->getPermissionsViaRoles()->pluck('name'),
             ]);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('auth')->error('Login exception', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -149,7 +151,7 @@ class LoginController extends Controller
                 'message' => 'Logged out successfully'
             ]);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('auth')->error('Logout exception', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

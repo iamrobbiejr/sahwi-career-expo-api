@@ -116,7 +116,7 @@ Route::prefix('v1')
         Route::post(
             '/upload/verification-docs',
             [FileUploadController::class, 'uploadVerificationDocs']
-        )->middleware('auth:sanctum');
+        );
 
         Route::middleware('auth:sanctum')
             ->post('/events/upload-banner', [FileUploadController::class, 'uploadBanner'])

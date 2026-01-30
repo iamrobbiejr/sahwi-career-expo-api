@@ -114,6 +114,13 @@ return [
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
         ],
+        'files' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/files/files.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
 
         'slack' => [
             'driver' => 'slack',

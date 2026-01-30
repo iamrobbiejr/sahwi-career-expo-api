@@ -11,7 +11,6 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -79,8 +78,9 @@ class RegisterController extends Controller
             // Handle avatar upload (optional)
             if ($request->hasFile('avatar')) {
                 $path = $request->file('avatar')->store('avatars', 'public');
-                // Generate absolute URL for stored file
-                $validated['avatar_url'] = Storage::disk('public')->url($path);
+
+                // Generate the URL including the full app/public path
+                $validated['avatar_url'] = asset('storage/app/public/' . $path);
             }
             if ($validated['role'] = 'student') {
                 $validated['verified'] = 1;

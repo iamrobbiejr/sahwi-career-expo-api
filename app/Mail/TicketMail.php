@@ -6,7 +6,6 @@ use App\Models\Ticket;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 
 class TicketMail extends Mailable
 {
@@ -28,10 +27,8 @@ class TicketMail extends Mailable
                 'registration' => $registration,
                 'event' => $event,
             ])
-            ->attachData(
-                Storage::get($this->ticket->pdf_path),
-                "ticket-{$this->ticket->ticket_number}.pdf",
-                ['mime' => 'application/pdf']
-            );
+            ->attachFromStorageDisk('public', $this->ticket->pdf_path, "ticket-{$this->ticket->ticket_number}.pdf", [
+                'mime' => 'application/pdf'
+            ]);
     }
 }

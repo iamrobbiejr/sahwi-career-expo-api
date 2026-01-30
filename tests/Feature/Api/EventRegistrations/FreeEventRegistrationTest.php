@@ -23,7 +23,7 @@ class FreeEventRegistrationTest extends TestCase
         // Bind a lightweight fake TicketService to avoid heavy IO in tests
         $this->app->bind(TicketService::class, function () {
             return new class extends TicketService {
-                public function generateTicket(EventRegistration $registration, Payment $payment = null): Ticket
+                public function generateTicketRecord(EventRegistration $registration, Payment $payment = null): Ticket
                 {
                     // Create a minimal ticket record without generating barcode/PDF/email
                     return Ticket::create([

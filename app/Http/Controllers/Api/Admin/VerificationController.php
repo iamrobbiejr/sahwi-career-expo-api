@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\UserVerificationStatusChanged;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -16,8 +17,7 @@ class VerificationController extends Controller
         try {
             $perPage = $request->get('per_page', 15); // Default to 15 items per page
             $users = User::whereIn('role', ['professional', 'company_rep', 'university'])
-                ->where('verified', false)
-                ->with('organization')
+                ->where('verified', '=', 0)
                 ->paginate($perPage);
             return response()->json([
                 'message' => 'Pending verifications fetched.',
@@ -30,7 +30,7 @@ class VerificationController extends Controller
                     'total_pages' => $users->lastPage(),
                 ],
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Failed fetching pending verifications: {$e->getMessage()}", [
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
@@ -44,7 +44,10 @@ class VerificationController extends Controller
     {
         try {
             $user = User::findOrFail($userId);
-            if (!in_array($user->role, ['professional', 'company_rep', 'university'])) {
+            Log::channel('admin')->info("Approving user ID {$userId}", [
+                'user' => $user->toArray(),
+            ]);
+            if (!in_array($user->role->value, ['professional', 'company_rep', 'university'], true)) {
                 return response()->json(['message' => 'User does not require manual verification.'], 400);
             }
             if ($user->verified) {
@@ -65,7 +68,7 @@ class VerificationController extends Controller
                 'message' => 'User and associated organization verified successfully.',
                 'user' => $user->fresh()
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Failed approving user ID {$$userId}: {$$e->getMessage()}", [
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -96,7 +99,7 @@ class VerificationController extends Controller
                 'message' => "User rejected. Reason: {$reason}",
                 'user' => $user->fresh()
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::channel('admin')->error("Failed rejecting user ID {$$userId}: {$$e->getMessage()}", [
                 'trace' => $e->getTraceAsString(),
                 'reason' => $request->input('reason')

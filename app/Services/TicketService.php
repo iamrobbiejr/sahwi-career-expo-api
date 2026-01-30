@@ -18,11 +18,15 @@ class TicketService
     public function generateTicketsForPayment(Payment $payment): void
     {
         foreach ($payment->items as $item) {
-            $this->generateTicket($item->registration, $payment);
+            $this->generateTicketRecord($item->registration, $payment);
         }
     }
 
-    public function generateTicket(EventRegistration $registration, Payment $payment = null): Ticket
+    /**
+     * Renamed from generateTicket to be more descriptive of its role.
+     * This handles record creation and file generation only.
+     */
+    public function generateTicketRecord(EventRegistration $registration, Payment $payment = null): Ticket
     {
         $ticket = Ticket::create([
             'event_registration_id' => $registration->id,
@@ -31,14 +35,8 @@ class TicketService
             'status' => 'active',
         ]);
 
-        // Generate barcode
         $this->generateBarcode($ticket);
-
-        // Generate PDF
         $this->generatePDF($ticket);
-
-        // Send email
-        $this->emailTicket($ticket);
 
         return $ticket;
     }

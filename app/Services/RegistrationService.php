@@ -14,8 +14,8 @@ class RegistrationService
 {
     public function registerIndividual(Event $event, User $user, array $data): EventRegistration
     {
-        return DB::transaction(function () use ($event, $user, $data) {
-            // Create registration
+        // 1. Handle all Database & File operations inside the transaction
+        $registrationData = DB::transaction(function () use ($event, $user, $data) {
             $registration = EventRegistration::create([
                 'event_id' => $event->id,
                 'user_id' => $user->id,
@@ -27,14 +27,11 @@ class RegistrationService
                 'attendee_phone' => $data['attendee_phone'] ?? $user->whatsapp_number,
                 'attendee_title' => $data['attendee_title'] ?? $user->title,
                 'attendee_organization_id' => $data['attendee_organization_id'] ?? $user->organisation_id,
-                'special_requirements' => $data['special_requirements'] ?? null,
-                'custom_fields' => $data['custom_fields'] ?? null,
             ]);
 
-            // Increment event registrations count
             $event->increment('registrations');
 
-            // For free events: create zero-amount completed payment and generate ticket
+            $ticket = null;
             if (!$event->is_paid) {
                 $payment = Payment::create([
                     'event_id' => $event->id,
@@ -44,29 +41,34 @@ class RegistrationService
                     'currency' => $event->currency,
                     'status' => 'completed',
                     'paid_at' => now(),
-                    'notes' => 'Auto-generated for free event registration',
                 ]);
 
                 PaymentItem::create([
                     'payment_id' => $payment->id,
                     'event_registration_id' => $registration->id,
-                    'description' => "Registration for {$event->name} - {$registration->attendee_name}",
+                    'description' => "Registration for {$event->name}",
                     'amount_cents' => 0,
                     'quantity' => 1,
                 ]);
 
-                // Generate and email ticket
-                app(TicketService::class)->generateTicket($registration, $payment);
+                // Create ticket & files, but DON'T email yet
+                $ticket = app(TicketService::class)->generateTicketRecord($registration, $payment);
             }
 
-            // Reward: configured points for event registration
-            app(\App\Services\RewardService::class)->awardFor($user, 'event_registration', [
+            app(RewardService::class)->awardFor($user, 'event_registration', [
                 'event_id' => $event->id,
                 'registration_id' => $registration->id,
             ]);
 
-            return $registration;
+            return ['registration' => $registration, 'ticket' => $ticket];
         });
+
+        // 2. Handle the Email outside the transaction
+        if ($registrationData['ticket']) {
+            app(TicketService::class)->emailTicket($registrationData['ticket']);
+        }
+
+        return $registrationData['registration'];
     }
 
     public function registerGroup(Event $event, User $companyRep, array $members, array $groupData = []): GroupRegistration
@@ -124,7 +126,7 @@ class RegistrationService
                         'quantity' => 1,
                     ]);
 
-                    app(TicketService::class)->generateTicket($registration, $payment);
+                    app(TicketService::class)->generateTicketRecord($registration, $payment);
                 }
             }
 
@@ -132,7 +134,7 @@ class RegistrationService
             $event->increment('registrations', count($members));
 
             // Reward: configured points for organizing a group registration (same key)
-            app(\App\Services\RewardService::class)->awardFor($companyRep, 'event_registration', [
+            app(RewardService::class)->awardFor($companyRep, 'event_registration', [
                 'event_id' => $event->id,
                 'group_registration_id' => $groupRegistration->id,
             ]);
