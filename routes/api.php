@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\Events\ConferenceCallController;
 use App\Http\Controllers\Api\Admin\Events\EventActivityController;
 use App\Http\Controllers\Api\Admin\Events\EventController;
 use App\Http\Controllers\Api\Admin\Events\EventPanelController;
+use App\Http\Controllers\Api\Admin\Reports\ReportsController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\VerificationController;
 use App\Http\Controllers\Api\Articles\ArticleCommentController;
@@ -134,6 +135,20 @@ Route::prefix('v1')
             Route::apiResource('users', UserManagementController::class)->parameters(['users' => 'userId']);
             Route::put('/users/{userId}/role', [UserManagementController::class, 'updateRole']);
             Route::patch('/users/{userId}/suspend', [UserManagementController::class, 'toggleSuspension']);
+
+            // Reports
+            Route::prefix('reports')->group(function () {
+                // Financial analysis — paid registrations
+                Route::get('/financial', [ReportsController::class, 'financial']);
+                Route::get('/financial/export', [ReportsController::class, 'financialExport']);
+
+                // Payments summary
+                Route::get('/payments-summary', [ReportsController::class, 'paymentsSummary']);
+                Route::get('/payments-summary/export', [ReportsController::class, 'paymentsSummaryExport']);
+
+                // Pending & Cancelled registrations
+                Route::get('/pending-cancelled', [ReportsController::class, 'pendingCancelled']);
+            });
         });
 
         /*
