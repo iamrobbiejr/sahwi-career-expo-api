@@ -48,8 +48,8 @@ class StripeGateway implements PaymentGatewayInterface
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => $options['return_url'] . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => $options['cancel_url'] ?? $options['return_url'],
+                'success_url' => ($options['return_url'] ?? url('/')) . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $options['cancel_url'] ?? $options['return_url'] ?? url('/'),
                 'client_reference_id' => $payment->payment_reference,
                 'customer_email' => $payment->user->email,
                 'metadata' => [
@@ -60,6 +60,7 @@ class StripeGateway implements PaymentGatewayInterface
 
             return [
                 'session_id' => $session->id,
+                'authorization_url' => $session->url,
                 'checkout_url' => $session->url,
                 'payment_intent_id' => $session->payment_intent,
             ];

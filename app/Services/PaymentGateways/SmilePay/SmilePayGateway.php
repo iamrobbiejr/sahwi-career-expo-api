@@ -20,8 +20,8 @@ class SmilePayGateway implements PaymentGatewayInterface
     public function __construct()
     {
         $this->gateway = PaymentGatewayModel::where('slug', 'smile-and-pay')->firstOrFail();
-        $this->apiKey = config('services.smileandpay.api_key');
-        $this->apiSecret = config('services.smileandpay.api_secret');
+        $this->apiKey = config('services.smilepay.api_key');
+        $this->apiSecret = config('services.smilepay.api_secret');
         $credentials = $this->gateway->credentials ?? [];
 
         // Prefer DB credentials; fallback to env
@@ -167,7 +167,7 @@ class SmilePayGateway implements PaymentGatewayInterface
         $this->logAndStoreInit($payment, 'innbucks', $response);
 
         return [
-            'innbucksPaymentCode' => Arr::get($response, 'innbucksPaymentCode'),
+            'payment_code' => Arr::get($response, 'innbucksPaymentCode'),
             'transactionReference' => Arr::get($response, 'transactionReference'),
         ];
     }
@@ -198,6 +198,7 @@ class SmilePayGateway implements PaymentGatewayInterface
 
         return [
             'transactionReference' => Arr::get($response, 'transactionReference'),
+            'requires_otp' => true,
         ];
     }
 
@@ -252,7 +253,9 @@ class SmilePayGateway implements PaymentGatewayInterface
     public function checkStatus(string $orderReference): array
     {
         $url = $this->baseUrl . "/payments/transaction/{$orderReference}/status/check";
-        $res = Http::acceptJson()->get($url);
+        $res = Http::acceptJson()
+            ->withHeaders($this->authHeaders())
+            ->get($url);
 
         if (!$res->successful()) {
             Log::channel('payments')->error('Smile&Pay status check failed', [
@@ -351,16 +354,19 @@ class SmilePayGateway implements PaymentGatewayInterface
         // Using common patterns: X-Api-Key or Authorization Bearer
         $headers = [];
         $creds = $this->gateway->credentials ?? [];
+
         if (!empty($creds['api_key'])) {
             $headers['X-Api-Key'] = $creds['api_key'];
-        } elseif ($key = env('SMILEPAY_API_KEY')) {
-            $headers['X-Api-Key'] = $key;
+        } elseif ($this->apiKey) {
+            $headers['X-Api-Key'] = $this->apiKey;
         }
+
         if (!empty($creds['merchant_id'])) {
             $headers['X-Merchant-Id'] = $creds['merchant_id'];
         } elseif ($mid = env('SMILEPAY_MERCHANT_ID')) {
             $headers['X-Merchant-Id'] = $mid;
         }
+
         return $headers;
     }
 

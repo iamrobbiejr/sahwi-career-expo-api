@@ -219,8 +219,8 @@ class EventRegistrationController extends Controller
     public function show(EventRegistration $registration): JsonResponse
     {
         // Authorization check
-        if ($registration->user_id !== auth()->id() &&
-            $registration->registered_by !== auth()->id() &&
+        if ((int)$registration->user_id !== auth()->id() &&
+            (int)$registration->registered_by !== auth()->id() &&
             !auth()->user()->hasRole('admin')) {
             return response()->json([
                 'message' => 'Unauthorized',
@@ -245,8 +245,8 @@ class EventRegistrationController extends Controller
     public function cancel(Request $request, EventRegistration $registration): JsonResponse
     {
         // Authorization check
-        if ($registration->user_id !== auth()->id() &&
-            $registration->registered_by !== auth()->id() &&
+        if ((int)$registration->user_id !== auth()->id() &&
+            (int)$registration->registered_by !== auth()->id() &&
             !auth()->user()->hasRole('admin')) {
             return response()->json([
                 'message' => 'Unauthorized',

@@ -50,7 +50,7 @@ class Payment extends Model
 
     public function gateway(): BelongsTo
     {
-        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id');
+        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id', 'id');
     }
 
     public function items(): HasMany

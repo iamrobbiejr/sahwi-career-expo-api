@@ -21,7 +21,7 @@ class SmilePayGatewayTest extends TestCase
 
         PaymentGateway::create([
             'name' => 'Smile&Pay',
-            'slug' => 'smilepay',
+            'slug' => 'smile-and-pay',
             'is_active' => true,
             'supports_webhooks' => true,
             'credentials' => [
@@ -47,13 +47,13 @@ class SmilePayGatewayTest extends TestCase
             'price_cents' => 10000,
             'currency' => 'USD',
         ]);
-        $gateway = PaymentGateway::where('slug', 'smilepay')->first();
+        $gateway = PaymentGateway::where('slug', 'smile-and-pay')->first();
 
         return Payment::create([
             'event_id' => $event->id,
             'user_id' => $user->id,
             'payment_gateway_id' => $gateway->id,
-            'gateway_name' => 'smilepay',
+            'gateway_name' => 'smile-and-pay',
             'amount_cents' => 10000,
             'currency' => 'USD',
             'status' => 'pending',
@@ -80,7 +80,7 @@ class SmilePayGatewayTest extends TestCase
             'payment_method' => 'innbucks',
         ]);
 
-        $this->assertEquals('IBC-456', $res['innbucksPaymentCode']);
+        $this->assertEquals('IBC-456', $res['payment_code']);
         $payment->refresh();
         $this->assertEquals('processing', $payment->status);
     }
@@ -88,12 +88,13 @@ class SmilePayGatewayTest extends TestCase
     public function test_verify_payment_maps_paid_to_completed()
     {
         $payment = $this->makePayment();
+        $payment->update(['gateway_transaction_id' => 'TX123']);
 
         Http::fake([
-            'zbnet.zb.co.zw/*/status/check' => Http::response([
+            'zbnet.zb.co.zw/*/payments/transaction/*/status/check' => Http::response([
                 'orderReference' => $payment->payment_reference,
                 'reference' => 'TX123',
-                'status' => 'PAID',
+                'status' => 'SUCCESS',
             ], 200),
         ]);
 
@@ -111,7 +112,7 @@ class SmilePayGatewayTest extends TestCase
         $result = $gateway->handleWebhook([
             'orderReference' => $payment->payment_reference,
             'transactionReference' => 'TX999',
-            'status' => 'PAID',
+            'status' => 'SUCCESS',
         ]);
 
         $this->assertEquals('completed', $result['status']);

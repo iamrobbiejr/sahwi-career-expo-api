@@ -30,7 +30,7 @@ class PaymentGateway extends Model
 
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Payment::class, 'payment_gateway_id', 'id');
     }
 
     public function supportsCurrency(string $currency): bool
