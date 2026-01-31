@@ -231,14 +231,9 @@ class SmilePayGateway implements PaymentGatewayInterface
     {
         $payload = $this->buildBasePayload($payment, $options);
 
-        // Sensitive card details should normally never pass through the backend.
-        // For this integration per docs, expect to receive them from secure form or tokenization.
-        $payload = array_merge($payload, Arr::only($options, [
-            'pan', 'expMonth', 'expYear', 'securityCode'
-        ]));
-        $payload['paymentMethod'] = $options['paymentMethod'] ?? 'WALLETPLUS';
+        $payload['paymentMethod'] = $options['paymentMethod'] ?? 'CARD';
 
-        $response = $this->post('/payments/express-checkout/mpgs', $payload);
+        $response = $this->post('/payments/initiate-transaction', $payload);
 
         $this->logAndStoreInit($payment, 'card', $response);
 
