@@ -45,6 +45,10 @@ return [
         'base_url' => env('SMILEPAY_BASE_URL', 'https://zbnet.zb.co.zw/wallet_sandbox_api/payments-gateway'),
         'api_key' => env('SMILEPAY_API_KEY'),
         'api_secret' => env('SMILEPAY_API_SECRET'),
+        'currency_map' => [
+            'USD' => '840',
+            'ZIG' => '924',
+        ],
     ],
 
 ];

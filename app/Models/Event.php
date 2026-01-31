@@ -51,10 +51,15 @@ class Event extends Model
     }
 
     /**
-     * Check if event is virtual.
+     * Check if the event is virtual.
      */
     public function isVirtual(): bool
     {
         return $this->location === 'Virtual';
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'event_id', 'id');
     }
 }

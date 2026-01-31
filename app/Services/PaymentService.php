@@ -11,9 +11,13 @@ use App\Models\Refund;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class PaymentService
 {
+    /**
+     * @throws Throwable
+     */
     public function createPayment(Event $event, User $user, array $registrationIds, string $gatewaySlug): Payment
     {
         return DB::transaction(function () use ($event, $user, $registrationIds, $gatewaySlug) {

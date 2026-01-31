@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Services\PaymentGateways\Contracts\PaymentGatewayInterface;
 use Exception;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -158,6 +159,9 @@ class SmilePayGateway implements PaymentGatewayInterface
 
     // ============ Custom Smile&Pay Methods ============
 
+    /**
+     * @throws Exception
+     */
     public function initiateInnbucks(Payment $payment, array $options = []): array
     {
         $payload = $this->buildBasePayload($payment, $options);
@@ -220,11 +224,14 @@ class SmilePayGateway implements PaymentGatewayInterface
         return $response;
     }
 
+    /**
+     * @throws Exception
+     */
     public function initiateCard(Payment $payment, array $options = []): array
     {
         $payload = $this->buildBasePayload($payment, $options);
 
-        // Sensitive card details should normally never pass through backend.
+        // Sensitive card details should normally never pass through the backend.
         // For this integration per docs, expect to receive them from secure form or tokenization.
         $payload = array_merge($payload, Arr::only($options, [
             'pan', 'expMonth', 'expYear', 'securityCode'
@@ -281,6 +288,9 @@ class SmilePayGateway implements PaymentGatewayInterface
         $failureUrl = $options['failure_url'] ?? $this->gateway->settings['failure_url'] ?? null;
         $resultUrl = $this->gateway->webhook_url ?: route('webhooks.smilepay');
 
+        $currencyKey = strtoupper($payment->currency);
+        $currencyCode = config("services.smilepay.currency_map.$currencyKey", '840'); // Default to USD
+
         return [
             'orderReference' => $payment->payment_reference,
             'amount' => round($payment->amount, 2),
@@ -288,7 +298,7 @@ class SmilePayGateway implements PaymentGatewayInterface
             'resultUrl' => $resultUrl,
             'itemName' => $event->name,
             'itemDescription' => 'Event Registration',
-            'currencyCode' => strtoupper($payment->currency),
+            'currencyCode' => $currencyCode,
             'firstName' => $user->name,
             'lastName' => $user->name,
             'mobilePhoneNumber' => $options['phone'] ?? $payment->payment_phone,
@@ -298,6 +308,10 @@ class SmilePayGateway implements PaymentGatewayInterface
         ];
     }
 
+    /**
+     * @throws ConnectionException
+     * @throws Exception
+     */
     protected function post(string $path, array $payload): array
     {
         $url = $this->baseUrl . $path;
