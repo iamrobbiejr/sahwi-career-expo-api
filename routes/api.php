@@ -271,6 +271,7 @@ Route::prefix('v1')
 
             // User's Registrations
             Route::get('my-registrations', [EventRegistrationController::class, 'myRegistrations']);
+            Route::get('check-registration/{event_id}', [EventRegistrationController::class, 'checkRegistration']);
             Route::get('registrations/{registration}', [EventRegistrationController::class, 'show']);
             Route::post('registrations/{registration}/cancel', [EventRegistrationController::class, 'cancel']);
 

@@ -5,185 +5,208 @@
     <title>Event Ticket - {{ $ticket->ticket_number }}</title>
     <style>
         @page {
+            size: A4 portrait;
             margin: 0;
         }
         body {
             font-family: 'DejaVu Sans', sans-serif;
             margin: 0;
             padding: 0;
-        }
-        .ticket-container {
-            width: 100%;
-            padding: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
         }
-        .ticket {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+        .ticket {
+            width: 340px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .ticket-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ticket-image-placeholder {
+            width: 100%;
+            height: 160px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+
+        .ticket-body {
+            padding: 24px 28px 20px;
         }
         .event-name {
-            font-size: 32px;
+            font-size: 18px;
             font-weight: bold;
-            color: #2d3748;
-            margin: 0 0 10px 0;
+            color: #1a202c;
+            margin: 0 0 4px 0;
+            line-height: 1.3;
         }
-        .ticket-type {
-            font-size: 16px;
-            color: #718096;
+
+        .ticket-type-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
+            color: #fff;
+            background: #2b6cb0;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 18px;
         }
-        .details-grid {
-            display: table;
-            width: 100%;
-            margin: 30px 0;
+
+        .divider {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 16px 0;
         }
         .detail-row {
-            display: table-row;
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
         }
         .detail-label {
-            display: table-cell;
-            padding: 12px 0;
+            font-size: 11px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
             font-weight: bold;
-            color: #4a5568;
-            width: 40%;
         }
         .detail-value {
-            display: table-cell;
-            padding: 12px 0;
+            font-size: 11.5px;
             color: #2d3748;
+            text-align: right;
+            max-width: 200px;
+            word-wrap: break-word;
         }
         .barcode-section {
             text-align: center;
-            margin: 40px 0;
-            padding: 30px;
-            background: #f7fafc;
-            border-radius: 10px;
+            margin-top: 18px;
+            padding: 16px 0 10px;
+            border-top: 2px dashed #e2e8f0;
         }
         .barcode-image {
-            margin: 20px 0;
+            margin: 0 auto;
         }
         .ticket-number {
-            font-size: 24px;
+            font-size: 13px;
             font-weight: bold;
-            color: #667eea;
-            margin-top: 10px;
-            letter-spacing: 3px;
+            color: #2b6cb0;
+            letter-spacing: 2.5px;
+            margin-top: 6px;
         }
         .footer {
             text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px dashed #e2e8f0;
-            color: #718096;
-            font-size: 12px;
+            padding: 12px 28px 18px;
+            border-top: 1px solid #f0f0f0;
         }
-        .important-notice {
-            background: #fff5f5;
-            border-left: 4px solid #f56565;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        .venue-highlight {
-            background: #ebf8ff;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
+
+        .footer p {
+            margin: 0;
+            font-size: 9.5px;
+            color: #a0aec0;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
-<div class="ticket-container">
+<div class="page">
     <div class="ticket">
-        <!-- Header -->
-        <div class="header">
-            <div class="event-name">{{ $event->name }}</div>
-            <div class="ticket-type">{{ ucfirst($registration->attendee_type) }} Ticket</div>
-        </div>
 
-        <!-- Attendee Details -->
-        <div class="details-grid">
+        @if($event->img)
+            <img src="{{ $event->img }}" alt="{{ $event->name }}" class="ticket-image">
+        @else
+            <div class="ticket-image-placeholder">No Event Image</div>
+        @endif
+
+        <div class="ticket-body">
+            <div class="event-name">{{ $event->name }}</div>
+            <div class="ticket-type-badge">{{ ucfirst($registration->attendee_type) }} Ticket</div>
+
+            <hr class="divider">
+
             <div class="detail-row">
-                <div class="detail-label">Attendee Name:</div>
-                <div class="detail-value">{{ $registration->attendee_name }}</div>
+                <span class="detail-label">Attendee</span>
+                <span class="detail-value">{{ $registration->attendee_name }}</span>
             </div>
             <div class="detail-row">
-                <div class="detail-label">Email:</div>
-                <div class="detail-value">{{ $registration->attendee_email }}</div>
+                <span class="detail-label">Email</span>
+                <span class="detail-value">{{ $registration->attendee_email }}</span>
             </div>
             @if($registration->attendee_phone)
                 <div class="detail-row">
-                    <div class="detail-label">Phone:</div>
-                    <div class="detail-value">{{ $registration->attendee_phone }}</div>
+                    <span class="detail-label">Phone</span>
+                    <span class="detail-value">{{ $registration->attendee_phone }}</span>
                 </div>
             @endif
+
             @if($registration->attendee_title)
                 <div class="detail-row">
-                    <div class="detail-label">Title:</div>
-                    <div class="detail-value">{{ $registration->attendee_title }}</div>
+                    <span class="detail-label">Title</span>
+                    <span class="detail-value">{{ $registration->attendee_title }}</span>
                 </div>
             @endif
             @if($registration->organization)
                 <div class="detail-row">
-                    <div class="detail-label">Organization:</div>
-                    <div class="detail-value">{{ $registration->organization->name }}</div>
+                    <span class="detail-label">Organization</span>
+                    <span class="detail-value">{{ $registration->organization->name }}</span>
                 </div>
             @endif
-        </div>
 
-        <!-- Event Details -->
-        <div class="venue-highlight">
-            <div class="details-grid">
+            <hr class="divider">
+
+            <div class="detail-row">
+                <span class="detail-label">Date</span>
+                <span class="detail-value">{{ $event->start_date->format('M j, Y g:i A') }}</span>
+            </div>
+            @if($event->venue)
                 <div class="detail-row">
-                    <div class="detail-label">Date & Time:</div>
-                    <div class="detail-value">{{ $event->start_date->format('F j, Y g:i A') }}</div>
+                    <span class="detail-label">Venue</span>
+                    <span class="detail-value">{{ $event->venue }}</span>
                 </div>
-                @if($event->venue)
-                    <div class="detail-row">
-                        <div class="detail-label">Venue:</div>
-                        <div class="detail-value">{{ $event->venue }}</div>
-                    </div>
-                @endif
-                @if($event->location)
-                    <div class="detail-row">
-                        <div class="detail-label">Location:</div>
-                        <div class="detail-value">{{ $event->location }}</div>
-                    </div>
-                @endif
+            @endif
+            @if($event->location)
+                <div class="detail-row">
+                    <span class="detail-label">Location</span>
+                    <span class="detail-value">{{ $event->location }}</span>
+                </div>
+            @endif
+
+            <div class="barcode-section">
+                <img src="data:image/png;base64,{{ $barcode }}" alt="Barcode" class="barcode-image"
+                     style="height: 70px;">
+                <div class="ticket-number">{{ $ticket->ticket_number }}</div>
             </div>
         </div>
 
-        <!-- Barcode -->
-        <div class="barcode-section">
-            <div style="font-size: 14px; color: #4a5568; margin-bottom: 10px;">
-                Please present this code at the entrance
-            </div>
-            <div class="barcode-image">
-                <img src="data:image/png;base64,{{ $barcode }}" alt="Barcode" style="height: 100px;">
-            </div>
-            <div class="ticket-number">{{ $ticket->ticket_number }}</div>
-        </div>
-
-        <!-- Important Notice -->
-        <div class="important-notice">
-            <strong>Important:</strong> This ticket is non-transferable and must be presented along with a valid photo ID at the event entrance. Screenshots are not accepted.
-        </div>
-
-        <!-- Footer -->
         <div class="footer">
-            <p>Issued on {{ $ticket->created_at->format('F j, Y g:i A') }}</p>
-            <p>For support, please contact {{ config('mail.from.address') }}</p>
+            <p>This ticket is non-transferable. Present with valid photo ID at entry.</p>
+            <p>Issued {{ $ticket->created_at->format('M j, Y') }} &middot; {{ config('mail.from.address') }}</p>
         </div>
+
     </div>
 </div>
 </body>

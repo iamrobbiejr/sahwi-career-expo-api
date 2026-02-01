@@ -30,6 +30,17 @@ class EventRegistrationController extends Controller
         return response()->json($registrations);
     }
 
+    public function checkRegistration(Request $request, int $event_id): JsonResponse
+    {
+        $isRegistered = EventRegistration::where('event_id', $event_id)
+            ->where('user_id', $request->user()->id)
+            ->exists();
+
+        return response()->json([
+            'registered' => $isRegistered,
+        ]);
+    }
+
 
     public function analytics(Event $event): JsonResponse
     {
