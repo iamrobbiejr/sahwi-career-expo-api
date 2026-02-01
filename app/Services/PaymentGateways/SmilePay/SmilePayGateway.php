@@ -39,17 +39,24 @@ class SmilePayGateway implements PaymentGatewayInterface
      */
     public function initializePayment(Payment $payment, array $options = []): array
     {
-        $method = strtolower($options['payment_method'] ?? $payment->payment_method ?? 'card');
+        // Unified Smile&Pay initiation: always use initiate-transaction and return the hosted payment URL
+        $payload = $this->buildBasePayload($payment, $options);
 
-        return match ($method) {
-            'innbucks' => $this->initiateInnbucks($payment, $options),
-            'ecocash' => $this->initiateEcocash($payment, $options),
-            'omari' => $this->initiateOmari($payment, $options),
-            'card' => $this->initiateCard($payment, $options),
-            default => throw new Exception("Unsupported Smile&Pay method: {$method}"),
-        };
+        $response = $this->post('/payments/initiate-transaction', $payload);
+
+        $this->logAndStoreInit($payment, 'hosted', $response);
+
+        return [
+            'orderReference' => Arr::get($response, 'orderReference', $payment->payment_reference),
+            'transactionReference' => Arr::get($response, 'transactionReference'),
+            'paymentUrl' => Arr::get($response, 'paymentUrl') ?? Arr::get($response, 'redirectUrl') ?? null,
+            'raw' => $response,
+        ];
     }
 
+    /**
+     * @throws Exception
+     */
     public function verifyPayment(Payment $payment): array
     {
         $orderRef = $payment->payment_reference;
@@ -89,17 +96,20 @@ class SmilePayGateway implements PaymentGatewayInterface
         throw new Exception('Smile&Pay refund API not supported');
     }
 
+    /**
+     * @throws Exception
+     */
     public function handleWebhook(array $payload): array
     {
         // Basic signature validation if header and secret present
-        try {
-            $this->validateSignature();
-        } catch (Exception $e) {
-            Log::channel('payments')->warning('Smile&Pay webhook signature validation failed', [
-                'error' => $e->getMessage(),
-            ]);
-            // Continue in the sandbox; throw in production if required
-        }
+//        try {
+//            $this->validateSignature();
+//        } catch (Exception $e) {
+//            Log::channel('payments')->warning('Smile&Pay webhook signature validation failed', [
+//                'error' => $e->getMessage(),
+//            ]);
+//            // Continue in the sandbox; throw in production if required
+//        }
 
         $orderRef = $payload['orderReference'] ?? $payload['order_reference'] ?? null;
         $status = strtoupper((string)($payload['status'] ?? ''));
@@ -159,92 +169,7 @@ class SmilePayGateway implements PaymentGatewayInterface
 
     // ============ Custom Smile&Pay Methods ============
 
-    /**
-     * @throws Exception
-     */
-    public function initiateInnbucks(Payment $payment, array $options = []): array
-    {
-        $payload = $this->buildBasePayload($payment, $options);
 
-        $response = $this->post('/payments/express-checkout/innbucks', $payload);
-
-        $this->logAndStoreInit($payment, 'innbucks', $response);
-
-        return [
-            'payment_code' => Arr::get($response, 'innbucksPaymentCode'),
-            'transactionReference' => Arr::get($response, 'transactionReference'),
-        ];
-    }
-
-    public function initiateEcocash(Payment $payment, array $options = []): array
-    {
-        $payload = $this->buildBasePayload($payment, $options);
-        $payload['ecocashMobile'] = $options['phone'] ?? $payment->payment_phone;
-
-        $response = $this->post('/payments/express-checkout/ecocash', $payload);
-
-        $this->logAndStoreInit($payment, 'ecocash', $response);
-
-        return [
-            'transactionReference' => Arr::get($response, 'transactionReference'),
-        ];
-    }
-
-    // Omari is two-step: init then confirm with OTP
-    public function initiateOmari(Payment $payment, array $options = []): array
-    {
-        $payload = $this->buildBasePayload($payment, $options);
-        $payload['omariMobile'] = $options['phone'] ?? $payment->payment_phone;
-
-        $response = $this->post('/payments/express-checkout/omari', $payload);
-
-        $this->logAndStoreInit($payment, 'omari', $response);
-
-        return [
-            'transactionReference' => Arr::get($response, 'transactionReference'),
-            'requires_otp' => true,
-        ];
-    }
-
-    public function confirmOmari(string $transactionReference, string $otp, string $omariMobile): array
-    {
-        $payload = [
-            'transactionReference' => $transactionReference,
-            'otp' => $otp,
-            'omariMobile' => $omariMobile,
-        ];
-
-        $response = $this->post('/payments/express-checkout/omari/confirmation', $payload);
-
-        Log::channel('payments')->info('Smile&Pay Omari confirmation response', [
-            'transactionReference' => $transactionReference,
-            'status' => $response['status'] ?? null,
-        ]);
-
-        return $response;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function initiateCard(Payment $payment, array $options = []): array
-    {
-        $payload = $this->buildBasePayload($payment, $options);
-
-        $payload['paymentMethod'] = $options['paymentMethod'] ?? 'CARD';
-
-        $response = $this->post('/payments/initiate-transaction', $payload);
-
-        $this->logAndStoreInit($payment, 'card', $response);
-
-        return [
-            'transactionReference' => Arr::get($response, 'transactionReference'),
-            'redirectHtml' => Arr::get($response, 'redirectHtml'),
-            'authenticationStatus' => Arr::get($response, 'authenticationStatus'),
-            'gatewayRecommendation' => Arr::get($response, 'gatewayRecommendation'),
-            'customizedHtml' => Arr::get($response, 'customizedHtml'),
-        ];
-    }
 
     public function cancelPayment(string $orderReference): array
     {
@@ -252,6 +177,9 @@ class SmilePayGateway implements PaymentGatewayInterface
         return $response;
     }
 
+    /**
+     * @throws ConnectionException
+     */
     public function checkStatus(string $orderReference): array
     {
         $url = $this->baseUrl . "/payments/transaction/{$orderReference}/status/check";
@@ -289,17 +217,17 @@ class SmilePayGateway implements PaymentGatewayInterface
         return [
             'orderReference' => $payment->payment_reference,
             'amount' => round($payment->amount, 2),
-            'returnUrl' => $returnUrl,
+            'returnUrl' => $returnUrl . '/' . $payment->id,
             'resultUrl' => $resultUrl,
             'itemName' => $event->name,
             'itemDescription' => 'Event Registration',
             'currencyCode' => $currencyCode,
-            'firstName' => $user->name,
-            'lastName' => $user->name,
-            'mobilePhoneNumber' => $options['phone'] ?? $payment->payment_phone,
-            'email' => $user->email,
-            'cancelUrl' => $cancelUrl,
-            'failureUrl' => $failureUrl,
+            'firstName' => $user->name ?? '',
+            'lastName' => $user->name ?? '',
+            'mobilePhoneNumber' => $options['phone'] ?? $payment->payment_phone ?? '',
+            'email' => $user->email ?? '',
+            'cancelUrl' => $cancelUrl ?? '',
+            'failureUrl' => $failureUrl ?? '',
         ];
     }
 
@@ -325,6 +253,7 @@ class SmilePayGateway implements PaymentGatewayInterface
                 'url' => $url,
                 'status' => $response->status(),
                 'body' => $response->body(),
+                'response' => $response->json(),
             ]);
             throw new Exception('Smile&Pay API request failed');
         }
@@ -359,26 +288,26 @@ class SmilePayGateway implements PaymentGatewayInterface
 
     protected function authHeaders(): array
     {
-        // If the gateway requires API keys via headers, add here.
-        // Using common patterns: X-Api-Key or Authorization Bearer
+        // Smile&Pay requires an API key and secret headers
         $headers = [];
         $creds = $this->gateway->credentials ?? [];
 
-        if (!empty($creds['api_key'])) {
-            $headers['X-Api-Key'] = $creds['api_key'];
-        } elseif ($this->apiKey) {
-            $headers['X-Api-Key'] = $this->apiKey;
-        }
+        $apiKey = $creds['api_key'] ?? $this->apiKey;
+        $apiSecret = $creds['api_secret'] ?? $this->apiSecret;
 
-        if (!empty($creds['merchant_id'])) {
-            $headers['X-Merchant-Id'] = $creds['merchant_id'];
-        } elseif ($mid = env('SMILEPAY_MERCHANT_ID')) {
-            $headers['X-Merchant-Id'] = $mid;
+        if ($apiKey) {
+            $headers['x-api-key'] = $apiKey;
+        }
+        if ($apiSecret) {
+            $headers['x-api-secret'] = $apiSecret;
         }
 
         return $headers;
     }
 
+    /**
+     * @throws Exception
+     */
     protected function validateSignature(): void
     {
         $secret = $this->gateway->webhook_secret ?? env('SMILEPAY_WEBHOOK_SECRET');

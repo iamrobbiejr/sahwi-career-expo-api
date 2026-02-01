@@ -61,7 +61,7 @@ class SmilePayGatewayTest extends TestCase
         ]);
     }
 
-    public function test_initiate_innbucks_returns_payment_code_and_sets_processing()
+    public function test_initiate_returns_payment_url_and_sets_processing()
     {
         $payment = $this->makePayment();
 
@@ -71,16 +71,15 @@ class SmilePayGatewayTest extends TestCase
                 'responseCode' => '00',
                 'status' => 'PENDING',
                 'transactionReference' => 'TX123',
-                'innbucksPaymentCode' => 'IBC-456',
+                'orderReference' => $payment->payment_reference,
+                'paymentUrl' => 'https://pay.example.com/checkout/XYZ',
             ], 200),
         ]);
 
         $gateway = app(SmilePayGateway::class);
-        $res = $gateway->initializePayment($payment, [
-            'payment_method' => 'innbucks',
-        ]);
+        $res = $gateway->initializePayment($payment, []);
 
-        $this->assertEquals('IBC-456', $res['payment_code']);
+        $this->assertEquals('https://pay.example.com/checkout/XYZ', $res['paymentUrl']);
         $payment->refresh();
         $this->assertEquals('processing', $payment->status);
     }

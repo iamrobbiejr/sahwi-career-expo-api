@@ -24,8 +24,7 @@ class PaymentController extends Controller
             'registration_ids' => 'required|array|min:1',
             'registration_ids.*' => 'exists:event_registrations,id',
             'payment_gateway' => 'required|string|exists:payment_gateways,slug',
-            'payment_method' => 'nullable|string|in:card,ecocash,innbucks,omari,mobile_money,bank_transfer',
-            'payment_phone' => 'exclude_unless:payment_method,mobile_money|required|string',
+            // We no longer manage payment methods at platform level; Smile&Pay handles this on their hosted page
             'return_url' => 'nullable|url',
             'cancel_url' => 'nullable|url',
         ]);
@@ -79,11 +78,7 @@ class PaymentController extends Controller
             $validated['payment_gateway']
         );
 
-        // Update payment with additional details
-        $payment->update([
-            'payment_method' => $validated['payment_method'] ?? null,
-            'payment_phone' => $validated['payment_phone'] ?? null,
-        ]);
+        // No payment-method specific details stored anymore; Smile&Pay hosted page manages payment methods
 
         // Initialize payment with gateway
         try {
@@ -92,8 +87,6 @@ class PaymentController extends Controller
             $initializationData = $gateway->initializePayment($payment, [
                 'return_url' => $validated['return_url'] ?? route('payments.callback'),
                 'cancel_url' => $validated['cancel_url'] ?? route('payments.cancelled'),
-                'payment_method' => $validated['payment_method'] ?? 'card',
-                'phone' => $validated['payment_phone'] ?? null,
             ]);
 
             $payment->update([
@@ -161,7 +154,7 @@ class PaymentController extends Controller
     public function verify(Request $request, Payment $payment): JsonResponse
     {
         // Authorization
-        if ($payment->user_id !== auth()->id() && !auth()->user()->hasRole('admin')) {
+        if ((int)$payment->user_id !== auth()->id() && !auth()->user()->hasRole('admin')) {
             return response()->json([
                 'message' => 'Unauthorized',
             ], 403);

@@ -80,7 +80,7 @@ class TicketService
         Storage::disk('public')->put($path, $pdf->output());
 
         $ticket->update([
-            'pdf_path' => 'app/public' . $path,
+            'pdf_path' => 'app/public/' . $path,
         ]);
     }
 

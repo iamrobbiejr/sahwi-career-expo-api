@@ -84,6 +84,9 @@ Route::prefix('v1')
         Route::post('/reset-password', Auth\ResetPasswordController::class)
             ->name('password.update');
 
+        Route::put('/change-password', Auth\ChangePasswordController::class)
+            ->name('password.change');
+
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [Auth\LoginController::class, 'logout']);
 
