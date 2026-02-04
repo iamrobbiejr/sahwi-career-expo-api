@@ -167,9 +167,13 @@ class EmailBroadcast extends Model
     /**
      * Get success rate percentage.
      */
+    /**
+     * Get success rate percentage.
+     */
     public function getSuccessRate(): float
     {
-        if ($this->total_recipients === 0) {
+        // Use > 0 to handle null, strings, or zero safely
+        if (!$this->total_recipients || $this->total_recipients <= 0) {
             return 0;
         }
 
@@ -181,7 +185,7 @@ class EmailBroadcast extends Model
      */
     public function getOpenRate(): float
     {
-        if ($this->sent_count === 0) {
+        if (!$this->sent_count || $this->sent_count <= 0) {
             return 0;
         }
 
@@ -193,7 +197,7 @@ class EmailBroadcast extends Model
      */
     public function getClickRate(): float
     {
-        if ($this->sent_count === 0) {
+        if (!$this->sent_count || $this->sent_count <= 0) {
             return 0;
         }
 

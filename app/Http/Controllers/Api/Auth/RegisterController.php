@@ -43,6 +43,7 @@ class RegisterController extends Controller
                 'role_at_organization' => 'nullable|string|max:100',
                 'organization_name' => 'nullable|string|max:255',
                 'verification_docs' => 'nullable|array',
+                'professional_verification_docs' => 'nullable|array',
                 // Avatar upload (optional)
                 'avatar' => 'nullable|image|max:5120', // max 5MB
             ]);
@@ -136,6 +137,7 @@ class RegisterController extends Controller
     {
         $request->validate([
             'expert_field' => 'required|string|max:255',
+            'professional_verification_docs' => 'required|array',
         ]);
     }
     private function handleOrganizationCreation(

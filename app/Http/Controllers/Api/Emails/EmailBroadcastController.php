@@ -24,26 +24,26 @@ class EmailBroadcastController extends Controller
             $query = EmailBroadcast::with(['sender', 'targetUniversity', 'targetEvent']);
 
             // Filter by sender
-            if ($request->has('sender_id')) {
+            if ($request->filled('sender_id')) {
                 $query->where('sender_id', $request->sender_id);
             }
 
             // Filter by status
-            if ($request->has('status')) {
+            if ($request->filled('status')) {
                 $query->where('status', $request->status);
             }
 
             // Filter by audience type
-            if ($request->has('audience_type')) {
+            if ($request->filled('audience_type')) {
                 $query->where('audience_type', $request->audience_type);
             }
 
             // Filter by date range
-            if ($request->has('from_date')) {
+            if ($request->filled('from_date')) {
                 $query->whereDate('created_at', '>=', $request->from_date);
             }
 
-            if ($request->has('to_date')) {
+            if ($request->filled('to_date')) {
                 $query->whereDate('created_at', '<=', $request->to_date);
             }
 
@@ -119,8 +119,8 @@ class EmailBroadcastController extends Controller
                 'is_scheduled' => $request->has('scheduled_at'),
                 'template' => $request->template,
                 'attachments' => $attachmentPaths,
-                'track_opens' => $request->input('track_opens', true),
-                'track_clicks' => $request->input('track_clicks', true),
+                'track_opens' => $request->boolean('track_opens', true),
+                'track_clicks' => $request->boolean('track_clicks', true),
                 'status' => 'draft',
             ]);
 
