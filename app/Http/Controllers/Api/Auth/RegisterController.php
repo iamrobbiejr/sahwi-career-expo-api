@@ -84,6 +84,10 @@ class RegisterController extends Controller
             }
             if ($validated['role'] = 'student') {
                 $validated['verified'] = 1;
+            } else {
+                $validated['verified'] = 0;
+                $validated['verification_reviewed_at'] = null;
+                $validated['verification_submitted_at'] = now();
             }
             // Create user
             $validated['password'] = Hash::make($validated['password']);

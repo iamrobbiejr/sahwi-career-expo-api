@@ -86,6 +86,11 @@ Route::prefix('v1')
 
         Route::put('/change-password', Auth\ChangePasswordController::class)
             ->name('password.change');
+        Route::get(
+            '/email/verify/{id}/{hash}',
+            Auth\EmailVerificationController::class
+        )->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [Auth\LoginController::class, 'logout']);
@@ -93,11 +98,6 @@ Route::prefix('v1')
             Route::get('/profile', [Auth\ProfileController::class, 'show']);
             Route::put('/profile', [Auth\ProfileController::class, 'update']);
 
-            Route::get(
-                '/email/verify/{id}/{hash}',
-                Auth\EmailVerificationController::class
-            )->middleware(['signed', 'throttle:6,1'])
-                ->name('verification.verify');
         });
     });
 

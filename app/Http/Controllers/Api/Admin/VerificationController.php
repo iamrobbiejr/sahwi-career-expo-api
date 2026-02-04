@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PendingVerificationResource;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\UserVerificationStatusChanged;
@@ -15,13 +16,16 @@ class VerificationController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 15); // Default to 15 items per page
+            $perPage = $request->get('per_page', 15);
+
             $users = User::whereIn('role', ['professional', 'company_rep', 'university'])
                 ->where('verified', '=', 0)
+                ->with('organisation')
                 ->paginate($perPage);
+
             return response()->json([
                 'message' => 'Pending verifications fetched.',
-                'data' => $users->items(),
+                'data' => PendingVerificationResource::collection($users->items()),
                 'pagination' => [
                     'total' => $users->total(),
                     'count' => $users->count(),

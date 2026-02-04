@@ -47,6 +47,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'reputation_points',
         'streak_days',
         'streak_last_date',
+        'professional_verification_docs'
     ];
 
     /**
@@ -57,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+
     ];
 
     /**
@@ -77,6 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'streak_last_date' => 'date',
             'reputation_points' => 'integer',
             'streak_days' => 'integer',
+            'professional_verification_docs' => 'array',
         ];
     }
 
