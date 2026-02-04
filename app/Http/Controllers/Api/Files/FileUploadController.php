@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class FileUploadController extends Controller
 {
@@ -21,7 +20,7 @@ class FileUploadController extends Controller
             // Store file in public disk under verification_docs/
             $path = $file->store('verification_docs', 'public');
             // Generate full URL
-            $url = Storage::disk('public')->url($path);
+            $url = asset('storage/app/public/' . $path);
             $uploadedUrls[] = $url;
         }
         return response()->json([

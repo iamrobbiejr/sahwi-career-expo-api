@@ -82,13 +82,17 @@ class RegisterController extends Controller
                 // Generate the URL including the full app/public path
                 $validated['avatar_url'] = asset('storage/app/public/' . $path);
             }
-            if ($validated['role'] = 'student') {
-                $validated['verified'] = 1;
+
+            if ($validated['role'] === 'student') {
+                $validated['verified'] = true;
+                $validated['verification_submitted_at'] = null;
+                $validated['verification_reviewed_at'] = now(); // Auto-approve students
             } else {
-                $validated['verified'] = 0;
+                $validated['verified'] = false;
                 $validated['verification_reviewed_at'] = null;
                 $validated['verification_submitted_at'] = now();
             }
+
             // Create user
             $validated['password'] = Hash::make($validated['password']);
             $user = User::create(array_filter($validated)); // Remove nulls safely
