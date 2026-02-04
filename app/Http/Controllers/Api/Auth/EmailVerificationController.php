@@ -3,58 +3,63 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class EmailVerificationController extends Controller
 {
     /**
      * Handle the incoming request.
      */
-    public function __invoke(EmailVerificationRequest $request)
+    public function __invoke(Request $request, $id, $hash)
     {
         try {
-            $user = $request->user();
+            $user = User::findOrFail($id);
+
+            // Validate hash
+            if (!hash_equals(
+                sha1($user->getEmailForVerification()),
+                $hash
+            )) {
+                abort(403, 'Invalid verification link.');
+            }
 
             if ($user->hasVerifiedEmail()) {
-                Log::channel('auth')->info('Email verification skipped: already verified', [
+                Log::channel('auth')->info('Email already verified', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'ip' => $request->ip(),
                 ]);
 
-                return response()->json([
-                    'message' => 'Email already verified.'
-                ], 400);
-            }
-
-            if ($user->markEmailAsVerified()) {
-                event(new Verified($user));
-
-                Log::channel('auth')->info('Email verified successfully', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'ip' => $request->ip(),
+                return view('auth.email-verified', [
+                    'alreadyVerified' => true
                 ]);
             }
 
-            return response()->json([
-                'message' => 'Email verified successfully'
-            ]);
+            $user->markEmailAsVerified();
+            event(new Verified($user));
 
-        } catch (\Throwable $e) {
-            Log::channel('auth')->error('Email verification exception', [
-                'user_id' => optional($request->user())->id,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            Log::channel('auth')->info('Email verified successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
                 'ip' => $request->ip(),
             ]);
 
-            return response()->json([
-                'message' => 'An unexpected error occurred while verifying your email.'
-            ], 500);
+            return view('auth.email-verified', [
+                'alreadyVerified' => false
+            ]);
+
+        } catch (Throwable $e) {
+            Log::channel('auth')->error('Email verification exception', [
+                'user_id' => $id ?? null,
+                'message' => $e->getMessage(),
+                'ip' => $request->ip(),
+            ]);
+
+            return view('auth.email-verification-failed');
         }
     }
 }

@@ -16,6 +16,8 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    'support_email' => env('MAIL_SUPPORT_EMAIL', 'support@example.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations

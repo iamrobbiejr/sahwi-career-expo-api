@@ -93,10 +93,11 @@ Route::prefix('v1')
             Route::get('/profile', [Auth\ProfileController::class, 'show']);
             Route::put('/profile', [Auth\ProfileController::class, 'update']);
 
-            Route::post(
+            Route::get(
                 '/email/verify/{id}/{hash}',
                 Auth\EmailVerificationController::class
-            )->name('verification.verify');
+            )->middleware(['signed', 'throttle:6,1'])
+                ->name('verification.verify');
         });
     });
 
