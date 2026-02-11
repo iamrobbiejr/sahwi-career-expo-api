@@ -24,7 +24,6 @@ class PaymentController extends Controller
             'registration_ids' => 'required|array|min:1',
             'registration_ids.*' => 'exists:event_registrations,id',
             'payment_gateway' => 'required|string|exists:payment_gateways,slug',
-            // We no longer manage payment methods at platform level; Smile&Pay handles this on their hosted page
             'return_url' => 'nullable|url',
             'cancel_url' => 'nullable|url',
         ]);
@@ -78,9 +77,12 @@ class PaymentController extends Controller
             $validated['payment_gateway']
         );
 
-        // No payment-method specific details stored anymore; Smile&Pay hosted page manages payment methods
-
-        // Initialize payment with gateway
+        /**
+         * No payment-method specific details stored; Smile&Pay hosted page manages a selection of payment methods
+         */
+        /**
+         * Initialize payment with gateway
+         */
         try {
             $gateway = PaymentGatewayFactory::make($validated['payment_gateway']);
 

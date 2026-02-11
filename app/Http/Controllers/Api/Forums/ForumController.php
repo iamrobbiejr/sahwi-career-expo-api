@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Forums;
 use App\Http\Controllers\Controller;
 use App\Models\Forum;
 use App\Models\ForumMember;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -268,14 +269,14 @@ class ForumController extends Controller
             $forum = Forum::findOrFail($id);
             $userId = Auth::id();
 
-            // Check if already member
+            // Check if already a member
             if ($forum->hasMember($userId)) {
                 return response()->json([
                     'error' => 'Already a member of this forum',
                 ], 400);
             }
 
-            // Check if forum is public
+            // Check if the forum is public
             if (!$forum->public) {
                 return response()->json([
                     'error' => 'Cannot join private forum',
@@ -358,6 +359,87 @@ class ForumController extends Controller
                 'error' => 'Failed to leave forum',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function removeMember($id, $userId)
+    {
+        try {
+            // check if an auth user has an admin role
+            if (!Auth::user()->hasRole('admin')) {
+                throw new Exception('Unauthorized to remove member');
+            }
+
+            $forum = Forum::findOrFail($id);
+            $member = User::findOrFail($userId);
+
+            $hasMember = ForumMember::where('forum_id', $id)->where('user_id', $userId)->exists();
+
+            Log::channel('threads')->info('Removing member from forum', [
+                'forum_id' => $id,
+                'user_id' => $userId,
+                'has_member' => $hasMember
+            ]);
+
+            if (!$hasMember) {
+                throw new Exception('User is not a member of the forum');
+            }
+
+            ForumMember::where('forum_id', $id)->where('user_id', $userId)->delete();
+            $forum->decrement('member_count');
+
+
+            Log::channel('threads')->info('Member removed from forum', [
+                'forum_id' => $id,
+                'user_id' => $userId,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Member removed successfully',
+                'data' => $member
+            ]);
+
+        } catch (Exception $e) {
+            Log::channel('threads')->error('Failed to remove member', [
+                'forum_id' => $id,
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'error' => 'Unauthorized to remove member',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function checkMembership($forumId)
+    {
+        try {
+            $forum = Forum::findOrFail($forumId);
+
+            if (!$forum->hasMember(Auth::id())) {
+                throw new Exception('User is not a member of the forum');
+            }
+
+            return response()->json([
+                'is_member' => true,
+                'message' => 'User is a member of the forum',
+                'data' => $forum->members()->where('user_id', Auth::id())->firstOrFail()
+            ]);
+
+        } catch (Exception $e) {
+            Log::channel('threads')->error('Failed to fetch membership', [
+                'forum_id' => $forumId,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'is_member' => false,
+                'error' => 'Failed to fetch membership',
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 

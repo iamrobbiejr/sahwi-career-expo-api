@@ -7,6 +7,7 @@ use App\Models\Forum;
 use App\Models\ForumComment;
 use App\Models\ForumMember;
 use App\Models\ForumPost;
+use App\Services\RewardService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 class ForumCommentController extends Controller
 {
@@ -36,7 +38,7 @@ class ForumCommentController extends Controller
             }
 
             $query = ForumComment::where('forum_post_id', $postId)
-                ->with(['author', 'replies.author']);
+                ->with(['author', 'replies.author'])->orderBy('created_at', 'desc');
 
             // Only show published comments to non-moderators
             $member = ForumMember::where('forum_id', $forumId)
@@ -49,7 +51,7 @@ class ForumCommentController extends Controller
 
             // Get root comments only (threaded structure)
             $comments = $query->whereNull('parent_comment_id')
-                ->orderBy('created_at', $request->input('sort', 'asc'))
+                ->orderBy('created_at', $request->input('sort', 'desc'))
                 ->paginate(50);
 
             return response()->json($comments);
@@ -174,12 +176,12 @@ class ForumCommentController extends Controller
             // Reward: configured points for creating a published forum comment
             if ($status === 'published') {
                 try {
-                    app(\App\Services\RewardService::class)->awardFor(Auth::user(), 'forum_comment_create', [
+                    app(RewardService::class)->awardFor(Auth::user(), 'forum_comment_create', [
                         'forum_id' => $forumId,
                         'post_id' => $postId,
                         'comment_id' => $comment->id,
                     ]);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     // Do not fail request due to rewards
                 }
             }
@@ -421,13 +423,13 @@ class ForumCommentController extends Controller
             try {
                 $author = $comment->author; // lazy load relation
                 if ($author && $author->id !== $userId) {
-                    app(\App\Services\RewardService::class)->awardFor($author, 'forum_post_liked', [
+                    app(RewardService::class)->awardFor($author, 'forum_post_liked', [
                         'comment_id' => $comment->id,
                         'post_id' => $postId,
                         'liked_by' => $userId,
                     ]);
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Non-critical
             }
 

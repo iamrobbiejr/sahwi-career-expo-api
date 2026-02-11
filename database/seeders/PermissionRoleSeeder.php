@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -116,6 +115,10 @@ class PermissionRoleSeeder extends Seeder
                 'users.edit_self',
                 'events.register',
                 'talks.create',
+                'articles.create',
+                'articles.publish',
+                'articles.moderate_comments',
+                'articles.edit',
                 'articles.comment',
                 'messages.send',
                 'messages.receive',
@@ -150,7 +153,11 @@ class PermissionRoleSeeder extends Seeder
                 'events.create',
                 'messages.send',
                 'messages.receive',
-                'articles.create'
+                'articles.create',
+                'articles.publish',
+                'articles.moderate_comments',
+                'articles.edit',
+                'articles.comment',
             ];
             $university->givePermissionTo($universityPermissions);
         }

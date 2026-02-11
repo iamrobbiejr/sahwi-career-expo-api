@@ -354,6 +354,8 @@ Route::prefix('v1')
             // ============================================
 
             Route::prefix('forums')->group(function () {
+
+
                 // Forum Management
                 Route::get('/', [ForumController::class, 'index']);
                 Route::post('/', [ForumController::class, 'store']);
@@ -365,7 +367,12 @@ Route::prefix('v1')
                 Route::post('/{id}/join', [ForumController::class, 'join']);
                 Route::post('/{id}/leave', [ForumController::class, 'leave']);
                 Route::get('/{id}/members', [ForumController::class, 'members']);
+                Route::post('/{id}/members/{userId}', [ForumController::class, 'removeMember']);
+                Route::get('/{id}/membership', [ForumController::class, 'checkMembership']);
             });
+
+            // Global Post Routes
+            Route::get('/forums/posts/hottest-posts', [ForumPostController::class, 'hottest']);
 
             // Forum Posts
             Route::prefix('forums/{forumId}/posts')->group(function () {

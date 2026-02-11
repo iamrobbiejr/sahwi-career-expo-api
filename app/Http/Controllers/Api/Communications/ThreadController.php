@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Communications;
 
 use App\Http\Controllers\Controller;
+use App\Models\EventRegistration;
 use App\Models\Thread;
 use App\Models\ThreadMember;
 use App\Models\User;
@@ -47,7 +48,7 @@ class ThreadController extends Controller
             $threads = $query->orderBy('last_message_at', 'desc')
                 ->paginate(20);
 
-            // Add unread count for each thread
+            // Add an unread count for each thread
             $threads->getCollection()->transform(function ($thread) use ($userId) {
                 $thread->unread_count = $thread->getUnreadCount($userId);
                 return $thread;
@@ -106,8 +107,9 @@ class ThreadController extends Controller
             $validator = Validator::make($request->all(), [
                 'title' => 'nullable|string|max:255',
                 'thread_type' => 'required|in:direct,group,forum,event_channel',
-                'member_ids' => 'required|array|min:1',
+                'member_ids' => 'required_without:event_id|array|min:1',
                 'member_ids.*' => 'exists:users,id',
+                'event_id' => 'nullable|exists:events,id',
                 'meta' => 'nullable|array',
             ]);
 
@@ -117,13 +119,34 @@ class ThreadController extends Controller
 
             DB::beginTransaction();
 
+            $memberIds = $request->member_ids ?? [];
+
+            // If event_id is present, fetch confirmed attendees
+            if ($request->has('event_id')) {
+                $eventMemberIds = EventRegistration::where('event_id', $request->event_id)
+                    ->where('status', 'confirmed')
+                    ->pluck('user_id')
+                    ->toArray();
+
+                // Merge distinct user IDs, enforcing uniqueness
+                $memberIds = array_unique(array_merge($memberIds, $eventMemberIds));
+
+                // If this is an event channel, we might want to store event_id in meta or a specific column if it existed
+                // For now, let's ensure meta has the event_id if not already
+                if (!$request->has('meta.event_id')) {
+                    $meta = $request->meta ?? [];
+                    $meta['event_id'] = $request->event_id;
+                    $request->merge(['meta' => $meta]);
+                }
+            }
+
             // Create thread
             $thread = Thread::create([
                 'title' => $request->title,
                 'thread_type' => $request->thread_type,
                 'created_by' => Auth::id(),
                 'meta' => $request->meta,
-                'member_count' => count($request->member_ids) + 1,
+                'member_count' => count($memberIds) + 1,
             ]);
 
             // Add creator as owner
@@ -137,7 +160,7 @@ class ThreadController extends Controller
             ]);
 
             // Add other members
-            foreach ($request->member_ids as $memberId) {
+            foreach ($memberIds as $memberId) {
                 if ($memberId != Auth::id()) {
                     ThreadMember::create([
                         'thread_id' => $thread->id,
@@ -186,7 +209,7 @@ class ThreadController extends Controller
                 }
             ])->findOrFail($id);
 
-            // Check if user is member
+            // Check if a user is a member
             if (!$thread->hasMember($userId)) {
                 return response()->json([
                     'error' => 'Unauthorized access to thread',

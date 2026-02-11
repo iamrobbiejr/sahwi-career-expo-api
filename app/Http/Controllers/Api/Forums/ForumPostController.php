@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Forum;
 use App\Models\ForumMember;
 use App\Models\ForumPost;
+use App\Services\RewardService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ForumPostController extends Controller
 {
@@ -91,6 +93,33 @@ class ForumPostController extends Controller
 
             return response()->json([
                 'error' => 'Failed to fetch posts',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get hottest posts (global).
+     */
+    public function hottest()
+    {
+        try {
+            // Get the top 3 posts by engagement (views + comments + likes)
+            $posts = ForumPost::with(['author', 'forum'])
+                ->published()
+                ->orderByRaw('(view_count + comment_count + like_count) DESC')
+                ->take(3)
+                ->get();
+
+            return response()->json($posts);
+
+        } catch (Exception $e) {
+            Log::channel('threads')->error('Failed to fetch hottest posts', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to fetch hottest posts',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -175,11 +204,11 @@ class ForumPostController extends Controller
 
             // Reward: configured points for creating a forum post
             try {
-                app(\App\Services\RewardService::class)->awardFor(Auth::user(), 'forum_post_create', [
+                app(RewardService::class)->awardFor(Auth::user(), 'forum_post_create', [
                     'forum_id' => $forumId,
                     'post_id' => $post->id,
                 ]);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Do not fail request due to rewards
             }
 
@@ -227,10 +256,13 @@ class ForumPostController extends Controller
                     'author',
                     'forum',
                     'comments' => function ($q) {
-                        $q->published()->whereNull('parent_comment_id');
+                        $q->published()
+                            ->whereNull('parent_comment_id')
+                            ->orderBy('created_at', 'desc');
                     }
                 ])
                 ->firstOrFail();
+
 
             // Increment view count
             $post->incrementViews();
