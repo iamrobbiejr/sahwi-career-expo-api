@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class EventRegistration extends Model
+class EventRegistration extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     protected $fillable = [
         'event_id',
         'user_id',

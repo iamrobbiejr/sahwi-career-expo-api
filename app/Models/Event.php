@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Event extends Model
+class Event extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     /** @use HasFactory<EventFactory> */
     use HasFactory;
 

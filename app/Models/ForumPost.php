@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Services\RewardService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use OwenIt\Auditing\Contracts\Auditable;
+use Throwable;
 
-class ForumPost extends Model
+class ForumPost extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     use SoftDeletes;
 
     /**
@@ -170,21 +174,21 @@ class ForumPost extends Model
                 $author = $this->author;
                 if ($author) {
                     // Avoid duplicate awards for the same milestone
-                    $exists = \App\Models\UserReward::where('user_id', $author->id)
+                    $exists = UserReward::where('user_id', $author->id)
                         ->where('action', 'forum_post_viewed')
                         ->where('meta->post_id', $this->id)
                         ->where('meta->milestone', (int)$this->view_count)
                         ->exists();
 
                     if (!$exists) {
-                        app(\App\Services\RewardService::class)->awardFor($author, 'forum_post_viewed', [
+                        app(RewardService::class)->awardFor($author, 'forum_post_viewed', [
                             'post_id' => $this->id,
                             'milestone' => (int)$this->view_count,
                         ]);
                     }
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Never fail due to rewards
         }
     }

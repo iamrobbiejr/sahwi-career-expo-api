@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class ArticleComment extends Model
+class ArticleComment extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     protected $fillable = [
         'article_id',
         'author_id',

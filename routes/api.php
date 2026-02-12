@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\Payments\PaymentController;
 use App\Http\Controllers\Api\Payments\PaymentGatewayController;
 use App\Http\Controllers\Api\Payments\TicketController;
 use App\Http\Controllers\Api\Payments\WebhookController;
+use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\DonationCampaignController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\UniversityController;
@@ -139,6 +140,11 @@ Route::prefix('v1')
             Route::apiResource('users', UserManagementController::class)->parameters(['users' => 'userId']);
             Route::put('/users/{userId}/role', [UserManagementController::class, 'updateRole']);
             Route::patch('/users/{userId}/suspend', [UserManagementController::class, 'toggleSuspension']);
+
+            // Role & Permission Management
+            Route::get('/roles', [RolePermissionController::class, 'indexRoles']);
+            Route::get('/permissions', [RolePermissionController::class, 'indexPermissions']);
+            Route::post('/roles/{role}/permissions', [RolePermissionController::class, 'update']);
 
             // Reports
             Route::prefix('reports')->group(function () {

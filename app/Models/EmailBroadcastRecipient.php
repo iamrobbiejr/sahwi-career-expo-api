@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class EmailBroadcastRecipient extends Model
+class EmailBroadcastRecipient extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     /**
      * The attributes that are mass-assignable.
      *

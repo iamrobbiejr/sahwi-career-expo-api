@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class EmailBroadcast extends Model
+class EmailBroadcast extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     use  SoftDeletes;
 
     /**

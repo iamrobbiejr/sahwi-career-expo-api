@@ -6,9 +6,11 @@ use Database\Factories\EventActivityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class EventActivity extends Model
+class EventActivity extends Model implements Auditable
 {
+    use \OwenIt\Auditing\Auditable;
     /** @use HasFactory<EventActivityFactory> */
     use HasFactory;
 

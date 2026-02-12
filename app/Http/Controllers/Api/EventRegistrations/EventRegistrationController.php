@@ -124,7 +124,7 @@ class EventRegistrationController extends Controller
 
     public function registerGroup(Request $request, Event $event): JsonResponse
     {
-        // Allow if user has the Spatie role or matches enum/string value
+        // Allow if the user has the Spatie role or matches enum/string value
         $userRole = $request->user()->role;
         $roleValue = $userRole instanceof UserRole ? $userRole->value : $userRole;
         if (!$request->user()->hasRole('company_rep') && $roleValue !== 'company_rep') {
