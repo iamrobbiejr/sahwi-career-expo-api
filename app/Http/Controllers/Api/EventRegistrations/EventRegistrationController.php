@@ -9,6 +9,7 @@ use App\Models\EventRegistration;
 use App\Services\RegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class EventRegistrationController extends Controller
 {
@@ -126,6 +127,9 @@ class EventRegistrationController extends Controller
     {
         // Allow if the user has the Spatie role or matches enum/string value
         $userRole = $request->user()->role;
+        Log::channel('daily')->info('User role', [
+            'role' => $userRole instanceof UserRole ? $userRole->value : $userRole,
+        ]);
         $roleValue = $userRole instanceof UserRole ? $userRole->value : $userRole;
         if (!$request->user()->hasRole('company_rep') && $roleValue !== 'company_rep') {
             return response()->json([

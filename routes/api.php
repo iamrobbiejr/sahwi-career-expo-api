@@ -269,8 +269,7 @@ Route::prefix('v1')
                 Route::post('register', [EventRegistrationController::class, 'registerIndividual']);
 
                 // Group registration (company_rep only)
-                Route::post('register-group', [EventRegistrationController::class, 'registerGroup'])
-                    ->middleware('role:company_rep');
+                Route::post('register-group', [EventRegistrationController::class, 'registerGroup']);
 
                 // Check registration status
                 Route::get('registration-status', [EventRegistrationController::class, 'checkStatus']);
