@@ -16,6 +16,66 @@ use Illuminate\Validation\Rules\Password;
 class RegisterController extends Controller
 {
     /**
+     * @OA\Post(
+     *     path="/api/v1/auth/register",
+     *     summary="User Registration",
+     *     description="Register a new user account. Different roles require different fields. Students are auto-verified, while other roles require admin approval.",
+     *     operationId="register",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password","name","role"},
+     *             @OA\Property(property="email", type="string", format="email", example="newuser@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="SecurePass123!"),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="role", type="string", enum={"admin","student","professional","company_rep","university","single"}, example="student"),
+     *             @OA\Property(property="current_school_name", type="string", example="ABC High School", description="Required for students"),
+     *             @OA\Property(property="current_grade", type="string", example="Grade 12", description="Required for students"),
+     *             @OA\Property(property="dob", type="string", format="date", example="2005-01-15"),
+     *             @OA\Property(property="bio", type="string", example="Passionate about technology"),
+     *             @OA\Property(property="organisation_id", type="string", example="uuid-here"),
+     *             @OA\Property(property="title", type="string", example="Software Engineer"),
+     *             @OA\Property(property="whatsapp_number", type="string", example="+1234567890"),
+     *             @OA\Property(property="interested_area", type="string", example="Computer Science", description="Required for students"),
+     *             @OA\Property(property="interested_course", type="string", example="BSc Computer Science", description="Required for students"),
+     *             @OA\Property(property="expert_field", type="string", example="Data Science", description="Required for professionals"),
+     *             @OA\Property(property="interested_university_id", type="integer", example=1, description="Required for students"),
+     *             @OA\Property(property="role_at_organization", type="string", example="Manager"),
+     *             @OA\Property(property="organization_name", type="string", example="Tech Corp"),
+     *             @OA\Property(property="verification_docs", type="array", @OA\Items(type="string")),
+     *             @OA\Property(property="professional_verification_docs", type="array", @OA\Items(type="string"), description="Required for professionals")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Registration successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Registration successful. Please check your email to verify your account."),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="newuser@example.com"),
+     *                 @OA\Property(property="role", type="string", example="student")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The email has already been taken.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="An unexpected error occurred during registration. Please try again.")
+     *         )
+     *     )
+     * )
+     *
      * Handle the incoming request.
      */
     public function __invoke(Request $request)

@@ -13,6 +13,58 @@ use Throwable;
 class LoginController extends Controller
 {
     /**
+     * @OA\Post(
+     *     path="/api/v1/auth/login",
+     *     summary="User Login",
+     *     description="Authenticate a user and receive an access token. The user must have a verified email and approved verification status (for certain roles).",
+     *     operationId="login",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Logged in successfully."),
+     *             @OA\Property(property="token", type="string", example="1|abcdef123456..."),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="user@example.com"),
+     *                 @OA\Property(property="role", type="string", example="student")
+     *             ),
+     *             @OA\Property(property="permissions", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid credentials")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Email not verified or verification pending/denied",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Please verify your email address before logging in.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="An unexpected error occurred. Please try again later.")
+     *         )
+     *     )
+     * )
+     *
      * Handle the incoming request.
      */
     public function __invoke(Request $request)
@@ -123,6 +175,38 @@ class LoginController extends Controller
         }
     }
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/auth/logout",
+     *     summary="User Logout",
+     *     description="Revoke all authentication tokens for the current user",
+     *     operationId="logout",
+     *     tags={"Authentication"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Logged out successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="An unexpected error occurred while logging out.")
+     *         )
+     *     )
+     * )
+     */
     public function logout(Request $request)
     {
         try {
