@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AuditController;
 use App\Http\Controllers\Api\Admin\Events\ConferenceCallController;
 use App\Http\Controllers\Api\Admin\Events\EventActivityController;
 use App\Http\Controllers\Api\Admin\Events\EventController;
@@ -162,6 +163,14 @@ Route::prefix('v1')
 
                 // Pending & Cancelled registrations
                 Route::get('/pending-cancelled', [ReportsController::class, 'pendingCancelled']);
+            });
+
+            // Audit Logs
+            Route::prefix('audits')->group(function () {
+                Route::get('/', [AuditController::class, 'index']);          // GET  /admin/audits
+                Route::get('/stats', [AuditController::class, 'stats']);     // GET  /admin/audits/stats
+                Route::get('/model-types', [AuditController::class, 'modelTypes']); // GET  /admin/audits/model-types
+                Route::get('/{id}', [AuditController::class, 'show']);      // GET  /admin/audits/{id}
             });
         });
 
