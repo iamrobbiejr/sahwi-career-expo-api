@@ -51,4 +51,12 @@ return [
         ],
     ],
 
+    'paynow' => [
+        'foreign_integration_id' => env('PAYNOW_FOREIGN_INTEGRATION_ID'),
+        'foreign_integration_key' => env('PAYNOW_FOREIGN_INTEGRATION_KEY'),
+        'local_integration_id' => env('PAYNOW_LOCAL_INTEGRATION_ID'),
+        'local_integration_key' => env('PAYNOW_LOCAL_INTEGRATION_KEY'),
+        'initiate_url' => env('PAYNOW_INITIATE_TRANSACTION_URL', 'https://www.paynow.co.zw/interface/initiatetransaction'),
+    ],
+
 ];

@@ -26,6 +26,10 @@ class PaymentController extends Controller
             'payment_gateway' => 'required|string|exists:payment_gateways,slug',
             'return_url' => 'nullable|url',
             'cancel_url' => 'nullable|url',
+            // Paynow Express (mobile money) fields
+            'payment_method' => 'nullable|string|in:redirect,mobile_money',
+            'phone' => 'nullable|string|max:20',
+            'network' => 'nullable|string|in:ecocash,onemoney,telecash',
         ]);
 
         // Verify all registrations belong to user and same event
@@ -89,10 +93,15 @@ class PaymentController extends Controller
             $initializationData = $gateway->initializePayment($payment, [
                 'return_url' => $validated['return_url'] ?? route('payments.callback'),
                 'cancel_url' => $validated['cancel_url'] ?? route('payments.cancelled'),
+                'payment_method' => $validated['payment_method'] ?? 'redirect',
+                'phone' => $validated['phone'] ?? null,
+                'network' => $validated['network'] ?? 'ecocash',
             ]);
 
             $payment->update([
                 'status' => 'processing',
+                'payment_method' => $validated['payment_method'] ?? 'redirect',
+                'payment_phone' => $validated['phone'] ?? null,
                 'gateway_response' => array_merge(
                     $payment->gateway_response ?? [],
                     ['initialization' => $initializationData]

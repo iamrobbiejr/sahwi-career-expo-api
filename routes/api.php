@@ -264,10 +264,18 @@ Route::prefix('v1')
         Route::get('payment-gateways', [PaymentGatewayController::class, 'index']);
 
         // Webhooks (no auth required)
-        Route::post('webhooks/paynow', [WebhookController::class, 'paynow']);
+        Route::post('webhooks/paynow', [WebhookController::class, 'paynow'])->name('webhooks.paynow');
         Route::post('webhooks/paypal', [WebhookController::class, 'paypal']);
         Route::post('webhooks/stripe', [WebhookController::class, 'stripe']);
         Route::post('webhooks/smilepay', [WebhookController::class, 'smilepay'])->name('webhooks.smilepay');
+
+        // Paynow browser return & cancel URLs (frontend handles actual redirect)
+        Route::get('payments/callback', fn() => response()->json(['message' => 'Payment callback received']))->name('payments.callback');
+        Route::get('payments/cancelled', fn() => response()->json(['message' => 'Payment cancelled']))->name('payments.cancelled');
+
+        // SahwiPay: frontend forwards the return URL params (?reference=&serverId=&status=)
+        // so the API can record the outcome and mark the payment accordingly.
+        Route::post('webhooks/sahwipay', [WebhookController::class, 'sahwipay'])->name('webhooks.sahwipay');
 
         Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('events/{event}/registrations', [EventRegistrationController::class, 'registrations']);

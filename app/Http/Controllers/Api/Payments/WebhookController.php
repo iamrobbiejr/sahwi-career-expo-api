@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\Payments;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\PaymentGateway;
 use App\Models\WebhookLog;
 use App\Services\PaymentGateways\PaymentGatewayFactory;
 use App\Services\PaymentService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -36,11 +38,20 @@ class WebhookController extends Controller
         return $this->handleWebhook('smilepay', $request->all());
     }
 
+    /**
+     * SahwiPay "return" callback — called by the frontend after Sahwi redirects
+     * back with ?reference=&serverId=&status=SUCCESS|FAILED|CANCELLED
+     */
+    public function sahwipay(Request $request)
+    {
+        return $this->handleWebhook('sahwipay', $request->all());
+    }
+
     protected function handleWebhook(string $gatewaySlug, array $payload)
     {
         // Log webhook
         $webhookLog = WebhookLog::create([
-            'payment_gateway_id' => \App\Models\PaymentGateway::where('slug', $gatewaySlug)->first()?->id,
+            'payment_gateway_id' => PaymentGateway::where('slug', $gatewaySlug)->first()?->id,
             'event_type' => $payload['event_type'] ?? $payload['type'] ?? 'unknown',
             'payload' => $payload,
             'status' => 'pending',
@@ -65,7 +76,7 @@ class WebhookController extends Controller
 
             return response()->json(['status' => 'success']);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Webhook processing failed for {$gatewaySlug}", [
                 'error' => $e->getMessage(),
                 'payload' => $payload,
