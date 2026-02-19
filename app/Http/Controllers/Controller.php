@@ -9,8 +9,8 @@ use Illuminate\Routing\Controller as BaseController;
 /**
  * @OA\Info(
  *     version="1.0.0",
- *     title="SAHWI Career Expo API Documentation",
- *     description="Comprehensive API documentation for the SAHWI Career Expo platform. This API provides endpoints for event management, user authentication, registrations, payments, messaging, forums, articles, and more.",
+ *     title="EduGate API Documentation",
+ *     description="Comprehensive API documentation for the EduGate platform. This API provides endpoints for event management, user authentication, registrations, payments, messaging, forums, articles, and more.",
  *     @OA\Contact(
  *         email="support@sahwi-career-expo.com"
  *     ),

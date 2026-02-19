@@ -64,4 +64,9 @@ class Event extends Model implements Auditable
     {
         return $this->hasMany(Payment::class, 'event_id', 'id');
     }
+
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(EventRegistration::class, 'event_id', 'id');
+    }
 }

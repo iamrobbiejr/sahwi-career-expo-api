@@ -1,30 +1,10 @@
-# SAHWI Career Expo API Documentation
+# EduGate API Documentation
 
 ## 📚 Overview
 
-This document provides comprehensive information about the SAHWI Career Expo API endpoints, authentication, and usage
+This document provides comprehensive information about the EduGate API endpoints, authentication, and usage
 guidelines.
 
-## 🔗 Accessing the API Documentation
-
-### Swagger UI Documentation
-
-Once the application is running, you can access the interactive API documentation at:
-
-```
-http://localhost:8000/api/documentation
-```
-
-**Note:** If you encounter any issues generating the Swagger documentation, run:
-
-```bash
-php artisan l5-swagger:generate
-```
-
-### Alternative: Postman Collection
-
-You can also import the API endpoints into Postman for testing. See the `postman_collection.json` file in the project
-root.
 
 ## 🔐 Authentication
 
@@ -385,7 +365,7 @@ For API support and questions:
 
 ## 📄 License
 
-Proprietary - SAHWI Career Expo Platform
+Proprietary - EduGate Platform
 
 ---
 

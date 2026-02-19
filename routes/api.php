@@ -55,6 +55,10 @@ Route::prefix('v1')
 
         Route::get('/universities', [UniversityController::class, 'index']);
 
+        // Global Post Routes
+        Route::get('/forums/posts/hottest-posts', [ForumPostController::class, 'hottest']);
+
+
     /*
     |--------------------------------------------------------------------------
     | Organizations
@@ -376,8 +380,6 @@ Route::prefix('v1')
                 Route::get('/{id}/membership', [ForumController::class, 'checkMembership']);
             });
 
-            // Global Post Routes
-            Route::get('/forums/posts/hottest-posts', [ForumPostController::class, 'hottest']);
 
             // Forum Posts
             Route::prefix('forums/{forumId}/posts')->group(function () {

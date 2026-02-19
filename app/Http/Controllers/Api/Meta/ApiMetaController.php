@@ -18,7 +18,7 @@ class ApiMetaController extends Controller
      *         response=200,
      *         description="API metadata retrieved successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string", example="SAHWI Career Expo"),
+     *             @OA\Property(property="name", type="string", example="EduGate"),
      *             @OA\Property(property="environment", type="string", example="production"),
      *             @OA\Property(property="version", type="string", example="v1"),
      *             @OA\Property(property="release", type="string", example="1.0.0"),

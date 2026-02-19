@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "SAHWI Career Expo API Documentation",
-        "description": "Comprehensive API documentation for the SAHWI Career Expo platform. This API provides endpoints for event management, user authentication, registrations, payments, messaging, forums, articles, and more.",
+        "title": "EduGate API Documentation",
+        "description": "Comprehensive API documentation for the EduGate platform. This API provides endpoints for event management, user authentication, registrations, payments, messaging, forums, articles, and more.",
         "version": "1.0.0",
         "contact": {
             "email": "support@sahwi-career-expo.com"
@@ -81,7 +81,7 @@
                                     "properties": {
                                         "name": {
                                             "type": "string",
-                                            "example": "SAHWI Career Expo"
+                                            "example": "EduGate"
                                         },
                                         "environment": {
                                             "type": "string",
