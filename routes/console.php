@@ -27,3 +27,5 @@ Schedule::command('logs:clean --days=14')->daily();
 // ── Articles ──────────────────────────────────────────────────────────────────
 Schedule::command('articles:warm-cache')->everyThirtyMinutes();
 Schedule::command('articles:update-trending-scores')->everyFifteenMinutes();
+
+Schedule::command('pulse:check')->everyMinute();
